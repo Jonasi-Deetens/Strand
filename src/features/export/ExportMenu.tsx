@@ -5,8 +5,6 @@ import { type Status } from "@/domain/types";
 import { saveBinaryFile, saveTextFile } from "@/lib/files";
 import { useLanguage, useT } from "@/i18n/useT";
 import { useProjectStore } from "@/store/useProjectStore";
-import { buildDxf, dxfFileName } from "./dxf";
-import { buildPdf, pdfFileName } from "./pdf";
 import { pngFileName, stagePng } from "./png";
 import { exportProjectFile } from "./projectFile";
 
@@ -45,22 +43,27 @@ export function ExportMenu() {
     }
   };
 
+  // The DXF and PDF writers are heavy libraries, so they load on first use
+  // rather than with the editor.
   const items = [
     {
       icon: "file",
       label: t("exporting.dxf"),
-      run: () =>
-        saveTextFile(
+      run: async () => {
+        const { buildDxf, dxfFileName } = await import("./dxf");
+        return saveTextFile(
           buildDxf(doc, { lang }),
           dxfFileName(doc),
           ["dxf"],
           "image/vnd.dxf",
-        ),
+        );
+      },
     },
     {
       icon: "download",
       label: t("exporting.pdf"),
       run: async () => {
+        const { buildPdf, pdfFileName } = await import("./pdf");
         const pdf = buildPdf(doc, {
           lang,
           statusLabel: (status) => t(`status.${status as Status}`),

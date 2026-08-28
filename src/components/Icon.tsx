@@ -82,6 +82,7 @@ export const ICON_PATHS: Record<string, string> = {
   info: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 11v5 M12 8h.01",
   warning: "M12 4 2 20h20z M12 10v5 M12 17h.01",
   clock: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 8v4l3 2",
+  help: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .9-1 1.6 M12 16.5h.01",
 };
 
 export function Icon({

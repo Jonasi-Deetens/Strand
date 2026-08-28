@@ -140,7 +140,18 @@
     "shortcuts": "Sneltoetsen",
     "escape": "Selectie opheffen",
     "exportMenu": "Exporteren",
-    "objectsInScene": "{{count}} objecten"
+    "objectsInScene": "{{count}} objecten",
+    "groupTools": "Gereedschap",
+    "groupSelection": "Selectie",
+    "groupEditing": "Bewerken",
+    "groupView": "Weergave",
+    "selectAll": "Alles selecteren",
+    "addToSelection": "Aan selectie toevoegen",
+    "pan": "Plan verschuiven",
+    "zoomWheel": "Zoomen met scrollwiel",
+    "keyShiftClick": "⇧ + klik",
+    "keySpaceDrag": "Space + slepen",
+    "keyDoubleClick": "Dubbelklik"
   },
   "dashboard": {
     "title": "Overzicht",
@@ -161,6 +172,7 @@
     "coverage": "Bebouwd",
     "objects": "Objecten op plan",
     "cheapestSaving": "Mogelijke besparing",
+    "overdue": "{{count}} te laat",
     "quickStart": "Snel starten",
     "quickStartHint": "Begin met het plaatsen van de bar, het toilet en de cabines op het plan.",
     "toPlan": "Naar het plan"

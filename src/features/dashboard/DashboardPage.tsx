@@ -29,9 +29,14 @@ export function DashboardPage() {
   const doc = useProjectStore((state) => state.doc)!;
   const currency = doc.project.currency;
 
+  const today = new Date().toISOString().slice(0, 10);
   const totals = useMemo(() => projectTotals(doc), [doc]);
   const categories = useMemo(() => categorySummaries(doc), [doc]);
-  const tasks = useMemo(() => openTasks(doc).slice(0, 8), [doc]);
+  const allOpenTasks = useMemo(() => openTasks(doc), [doc]);
+  const tasks = allOpenTasks.slice(0, 8);
+  const overdueCount = allOpenTasks.filter(
+    (task) => task.dueDate && task.dueDate < today,
+  ).length;
   const expiring = useMemo(() => expiringOffertes(doc, 30), [doc]);
   const coverage = useMemo(() => plotCoverage(doc), [doc]);
   const beach = doc.scenes.find((scene) => scene.kind === "beach");
@@ -159,7 +164,17 @@ export function DashboardPage() {
             </dl>
           </Card>
 
-          <Card title={t("dashboard.nextUp")} className="lg:col-span-2">
+          <Card
+            title={t("dashboard.nextUp")}
+            className="lg:col-span-2"
+            action={
+              overdueCount > 0 ? (
+                <Badge colour={STATUS_COLOUR.vervallen}>
+                  {t("dashboard.overdue", { count: overdueCount })}
+                </Badge>
+              ) : undefined
+            }
+          >
             {tasks.length === 0 ? (
               <p className="muted text-xs">{t("dashboard.noTasks")}</p>
             ) : (
@@ -177,7 +192,13 @@ export function DashboardPage() {
                       {line && <StatusPill status={line.status} />}
                       <Badge>{t(`taskStatus.${task.status}`)}</Badge>
                       {task.dueDate && (
-                        <span className="muted shrink-0 tabular-nums">
+                        <span
+                          className={
+                            task.dueDate < today
+                              ? "shrink-0 font-medium tabular-nums text-rose-500"
+                              : "muted shrink-0 tabular-nums"
+                          }
+                        >
                           {task.dueDate}
                         </span>
                       )}

@@ -12,6 +12,7 @@ import { Inspector } from "./Inspector";
 import { LayersLegend } from "./LayersLegend";
 import { Palette } from "./Palette";
 import { PlanCanvas } from "./PlanCanvas";
+import { ShortcutsHelp } from "./ShortcutsHelp";
 import { fitView, zoomAt } from "./canvasUtils";
 import { useEditorShortcuts } from "./useEditorShortcuts";
 
@@ -133,7 +134,12 @@ export function PlanPage() {
           breadcrumb={breadcrumb}
           onZoom={handleZoom}
           onZoomFit={handleZoomFit}
-          trailing={<ExportMenu />}
+          trailing={
+            <>
+              <ExportMenu />
+              <ShortcutsHelp />
+            </>
+          }
         />
         <div
           className="relative min-h-0 flex-1"

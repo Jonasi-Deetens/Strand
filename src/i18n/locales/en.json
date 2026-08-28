@@ -140,7 +140,18 @@
     "shortcuts": "Shortcuts",
     "escape": "Clear selection",
     "exportMenu": "Export",
-    "objectsInScene": "{{count}} objects"
+    "objectsInScene": "{{count}} objects",
+    "groupTools": "Tools",
+    "groupSelection": "Selection",
+    "groupEditing": "Editing",
+    "groupView": "View",
+    "selectAll": "Select all",
+    "addToSelection": "Add to selection",
+    "pan": "Pan the plan",
+    "zoomWheel": "Zoom with the scroll wheel",
+    "keyShiftClick": "⇧ + click",
+    "keySpaceDrag": "Space + drag",
+    "keyDoubleClick": "Double-click"
   },
   "dashboard": {
     "title": "Overview",
@@ -161,6 +172,7 @@
     "coverage": "Built up",
     "objects": "Objects on plan",
     "cheapestSaving": "Potential saving",
+    "overdue": "{{count}} overdue",
     "quickStart": "Quick start",
     "quickStartHint": "Start by placing the bar, the toilet block and the cabins on the plan.",
     "toPlan": "Go to the plan"

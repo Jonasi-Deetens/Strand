@@ -9,22 +9,8 @@ import { mmToM, parseMetresInput } from "@/lib/units";
 import { useEditorStore } from "@/store/useEditorStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { exportProjectFile, importProjectFile } from "@/features/export/projectFile";
-
-const SHORTCUTS: { keys: string; key: string }[] = [
-  { keys: "V", key: "editor.escape" },
-  { keys: "R", key: "editor.arrayTool" },
-  { keys: "M", key: "editor.measure" },
-  { keys: "G", key: "editor.grid" },
-  { keys: "S", key: "editor.statusCycle" },
-  { keys: "L", key: "editor.locked" },
-  { keys: "⌫", key: "editor.deleteSelection" },
-  { keys: "⌘/Ctrl + D", key: "common.duplicate" },
-  { keys: "⌘/Ctrl + Z", key: "editor.undo" },
-  { keys: "⌘/Ctrl + ⇧ + Z", key: "editor.redo" },
-  { keys: "⌘/Ctrl + A", key: "common.all" },
-  { keys: "↑ ↓ ← →", key: "editor.nudgeHint" },
-  { keys: "[ ]", key: "editor.sendBackward" },
-];
+import { ShortcutKeys } from "@/features/editor/ShortcutsHelp";
+import { SHORTCUT_GROUPS } from "@/features/editor/shortcuts";
 
 export function SettingsPage() {
   const t = useT();
@@ -158,19 +144,30 @@ export function SettingsPage() {
           </Card>
 
           <Card title={t("settings.shortcuts")}>
-            <dl className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-2">
-              {SHORTCUTS.map((shortcut) => (
-                <div
-                  key={shortcut.keys}
-                  className="flex items-center justify-between gap-2 border-b border-subtle py-1 last:border-b-0"
-                >
-                  <dt className="muted truncate">{t(shortcut.key)}</dt>
-                  <dd className="shrink-0 rounded border border-subtle px-1.5 py-0.5 font-mono text-[10px]">
-                    {shortcut.keys}
-                  </dd>
-                </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {SHORTCUT_GROUPS.map((group) => (
+                <section key={group.titleKey}>
+                  <h3 className="muted mb-1 text-[11px] font-semibold tracking-wide uppercase">
+                    {t(group.titleKey)}
+                  </h3>
+                  <dl className="flex flex-col text-xs">
+                    {group.items.map((shortcut) => (
+                      <div
+                        key={`${group.titleKey}-${shortcut.labelKey}`}
+                        className="flex items-center justify-between gap-2 border-b border-subtle py-1 last:border-b-0"
+                      >
+                        <dt className="muted min-w-0 truncate">
+                          {t(shortcut.labelKey)}
+                        </dt>
+                        <dd>
+                          <ShortcutKeys shortcut={shortcut} />
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
               ))}
-            </dl>
+            </div>
           </Card>
         </div>
       </div>
