@@ -6,6 +6,7 @@ import { useT } from "@/i18n/useT";
 import { useEditorStore } from "@/store/useEditorStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { beachScene } from "@/store/selectors";
+import { ExportMenu } from "@/features/export/ExportMenu";
 import { EditorToolbar } from "./EditorToolbar";
 import { Inspector } from "./Inspector";
 import { LayersLegend } from "./LayersLegend";
@@ -132,6 +133,7 @@ export function PlanPage() {
           breadcrumb={breadcrumb}
           onZoom={handleZoom}
           onZoomFit={handleZoomFit}
+          trailing={<ExportMenu />}
         />
         <div
           className="relative min-h-0 flex-1"

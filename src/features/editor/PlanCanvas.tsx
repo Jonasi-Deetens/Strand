@@ -35,6 +35,7 @@ import {
 } from "@/lib/units";
 import { useEditorStore } from "@/store/useEditorStore";
 import { useProjectStore } from "@/store/useProjectStore";
+import { registerStage } from "@/features/export/png";
 import { fitView, gridStepMm, toModel, zoomAt, type Size } from "./canvasUtils";
 import { ObjectShape } from "./ObjectShape";
 import { useCanvasTheme } from "./useCanvasTheme";
@@ -150,6 +151,11 @@ export function PlanCanvas({
     transformer.resizeEnabled(Boolean(itemType?.resizable));
     transformer.getLayer()?.batchDraw();
   }, [selection, visibleObjects, itemTypes]);
+
+  useEffect(() => {
+    registerStage(stageRef.current);
+    return () => registerStage(null);
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
