@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { Icon } from "@/components/Icon";
 import { Input } from "@/components/ui";
@@ -8,6 +8,77 @@ import { formatDims } from "@/lib/units";
 import { formatCents } from "@/lib/money";
 import { useLanguage, useT } from "@/i18n/useT";
 import { useEditorStore } from "@/store/useEditorStore";
+
+interface PaletteItemProps {
+  itemType: ItemType;
+  count: number;
+  currency: string;
+  active: boolean;
+  onPick: (itemTypeId: string) => void;
+}
+
+function PaletteItem({
+  itemType,
+  count,
+  currency,
+  active,
+  onPick,
+}: PaletteItemProps) {
+  const lang = useLanguage();
+  const swatchRef = useRef<HTMLSpanElement>(null);
+
+  return (
+    <button
+      type="button"
+      draggable
+      onDragStart={(event) => {
+        // `text/plain` as well, because some webviews hand back only the
+        // standard types on drop.
+        event.dataTransfer.setData("text/strand-item-type", itemType.id);
+        event.dataTransfer.setData("text/plain", itemType.id);
+        event.dataTransfer.effectAllowed = "copy";
+        // Without this the webview drags a snapshot of the whole row, which it
+        // renders far larger than the row itself; the icon tile stays small.
+        const swatch = swatchRef.current;
+        if (swatch) {
+          const box = swatch.getBoundingClientRect();
+          event.dataTransfer.setDragImage(swatch, box.width / 2, box.height / 2);
+        }
+      }}
+      onClick={() => onPick(itemType.id)}
+      className={clsx(
+        "group flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
+        active ? "bg-sea-500/20 ring-1 ring-sea-400" : "hover:bg-sea-500/10",
+      )}
+    >
+      <span
+        ref={swatchRef}
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
+        style={{
+          backgroundColor: `${itemType.colour}1f`,
+          color: itemType.colour,
+        }}
+      >
+        <Icon name={itemType.icon} size={17} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-medium">
+          {itemTypeName(itemType, lang)}
+        </span>
+        <span className="muted block truncate text-[10px]">
+          {formatDims(itemType.defaultWMm, itemType.defaultHMm)}
+          {itemType.unitPriceCents > 0 &&
+            ` · ${formatCents(itemType.unitPriceCents, currency)}`}
+        </span>
+      </span>
+      {count > 0 && (
+        <span className="muted shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[10px] tabular-nums">
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}
 
 interface PaletteProps {
   itemTypes: ItemType[];
@@ -23,7 +94,6 @@ export function Palette({
   currency,
 }: PaletteProps) {
   const t = useT();
-  const lang = useLanguage();
   const [query, setQuery] = useState("");
   const placingItemTypeId = useEditorStore((state) => state.placingItemTypeId);
   const startPlacing = useEditorStore((state) => state.startPlacing);
@@ -71,61 +141,19 @@ export function Palette({
               {t(`category.${group.category}` as `category.${Category}`)}
             </h3>
             <div className="flex flex-col gap-0.5">
-              {group.items.map((itemType) => {
-                const count = countByType.get(itemType.id) ?? 0;
-                const active =
-                  placingItemTypeId === itemType.id &&
-                  (tool === "place" || tool === "array");
-                return (
-                  <button
-                    key={itemType.id}
-                    type="button"
-                    draggable
-                    onDragStart={(event) => {
-                      // `text/plain` as well, because some webviews hand back
-                      // only the standard types on drop.
-                      event.dataTransfer.setData(
-                        "text/strand-item-type",
-                        itemType.id,
-                      );
-                      event.dataTransfer.setData("text/plain", itemType.id);
-                      event.dataTransfer.effectAllowed = "copy";
-                    }}
-                    onClick={() => startPlacing(itemType.id)}
-                    className={clsx(
-                      "group flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
-                      active
-                        ? "bg-sea-500/20 ring-1 ring-sea-400"
-                        : "hover:bg-sea-500/10",
-                    )}
-                  >
-                    <span
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
-                      style={{
-                        backgroundColor: `${itemType.colour}1f`,
-                        color: itemType.colour,
-                      }}
-                    >
-                      <Icon name={itemType.icon} size={17} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-medium">
-                        {itemTypeName(itemType, lang)}
-                      </span>
-                      <span className="muted block truncate text-[10px]">
-                        {formatDims(itemType.defaultWMm, itemType.defaultHMm)}
-                        {itemType.unitPriceCents > 0 &&
-                          ` · ${formatCents(itemType.unitPriceCents, currency)}`}
-                      </span>
-                    </span>
-                    {count > 0 && (
-                      <span className="muted shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[10px] tabular-nums">
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+              {group.items.map((itemType) => (
+                <PaletteItem
+                  key={itemType.id}
+                  itemType={itemType}
+                  count={countByType.get(itemType.id) ?? 0}
+                  currency={currency}
+                  active={
+                    placingItemTypeId === itemType.id &&
+                    (tool === "place" || tool === "array")
+                  }
+                  onPick={startPlacing}
+                />
+              ))}
             </div>
           </section>
         ))}
