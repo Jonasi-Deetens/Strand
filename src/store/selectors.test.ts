@@ -88,7 +88,7 @@ describe("quote selectors", () => {
     expect(bestQuoteForLine(withChoice, lineId)?.offerte.id).toBe("of_pricey");
   });
 
-  it("leaves rejected quotes out entirely", () => {
+  it("leaves rejected quotes out of the budget maths", () => {
     const { doc, lineId } = quotedDocument();
     const rejected = {
       ...doc,
@@ -99,6 +99,24 @@ describe("quote selectors", () => {
       ),
     };
     expect(quotesForLine(rejected, lineId)).toHaveLength(1);
+  });
+
+  it("keeps rejected quotes when the comparison asks for them", () => {
+    const { doc, lineId } = quotedDocument();
+    const rejected = {
+      ...doc,
+      offertes: doc.offertes.map((offerte) =>
+        offerte.id === "of_cheap"
+          ? { ...offerte, status: "afgewezen" as const }
+          : offerte,
+      ),
+    };
+    // Losing a quote must not erase the record of what was compared.
+    const quotes = quotesForLine(rejected, lineId, { includeRejected: true });
+    expect(quotes.map((quote) => quote.offerte.id)).toEqual([
+      "of_cheap",
+      "of_pricey",
+    ]);
   });
 
   it("totals one quote across its lines", () => {

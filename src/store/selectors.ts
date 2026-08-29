@@ -24,10 +24,20 @@ export function objectsForLine(
   return doc.objects.filter((object) => object.procurementLineId === lineId);
 }
 
+export interface QuotesForLineOptions {
+  /**
+   * Keep the quotes that lost. Budget maths must leave them out, but the
+   * comparison view needs them: hiding a rejected quote the moment its rival is
+   * chosen throws away the record of what the choice was made against.
+   */
+  includeRejected?: boolean;
+}
+
 /** Every quote that prices a given procurement line, cheapest first. */
 export function quotesForLine(
   doc: ProjectDocument,
   lineId: string,
+  options: QuotesForLineOptions = {},
 ): QuoteTotal[] {
   const byOfferte = new Map<string, { exVat: number; incVat: number; count: number }>();
   for (const line of doc.offerteLines) {
@@ -45,7 +55,8 @@ export function quotesForLine(
   return [...byOfferte.entries()]
     .flatMap(([offerteId, totals]) => {
       const offerte = doc.offertes.find((candidate) => candidate.id === offerteId);
-      if (!offerte || offerte.status === "afgewezen") return [];
+      if (!offerte) return [];
+      if (offerte.status === "afgewezen" && !options.includeRejected) return [];
       return [
         {
           offerte,

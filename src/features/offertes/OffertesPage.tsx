@@ -485,7 +485,10 @@ function ComparisonView() {
   const rows = useMemo(
     () =>
       doc.procurementLines
-        .map((line) => ({ line, quotes: quotesForLine(doc, line.id) }))
+        .map((line) => ({
+          line,
+          quotes: quotesForLine(doc, line.id, { includeRejected: true }),
+        }))
         .filter((row) => row.quotes.length > 0),
     [doc],
   );
@@ -506,7 +509,11 @@ function ComparisonView() {
     <div className="h-full overflow-auto p-4">
       <div className="flex flex-col gap-3">
         {rows.map(({ line, quotes }) => {
-          const cheapest = quotes[0]!;
+          // Quotes arrive cheapest first, so the first one still in the running
+          // is the price everything else is measured against.
+          const cheapest =
+            quotes.find((quote) => quote.offerte.status !== "afgewezen") ??
+            quotes[0]!;
           return (
             <section key={line.id} className="panel p-3">
               <header className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -521,7 +528,9 @@ function ComparisonView() {
                   const supplier = doc.suppliers.find(
                     (candidate) => candidate.id === quote.offerte.supplierId,
                   );
-                  const isCheapest = quote.offerte.id === cheapest.offerte.id;
+                  const rejected = quote.offerte.status === "afgewezen";
+                  const isCheapest =
+                    !rejected && quote.offerte.id === cheapest.offerte.id;
                   const delta = quote.exVatCents - cheapest.exVatCents;
                   return (
                     <li
@@ -531,6 +540,7 @@ function ComparisonView() {
                         isCheapest
                           ? "bg-emerald-500/10"
                           : "bg-[var(--surface-sunken)]",
+                        rejected && "opacity-55",
                       )}
                     >
                       <span className="min-w-32 flex-1 truncate font-medium">
