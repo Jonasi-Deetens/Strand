@@ -308,7 +308,8 @@
   "exporting": {
     "title": "Export",
     "dxf": "DXF (AutoCAD)",
-    "pdf": "Scaled PDF",
+    "pdf": "PDF at 1:100",
+    "pdfFit": "PDF fitted to A3",
     "png": "Image (PNG)",
     "project": "Project file (.json)",
     "done": "{{name}} saved",

@@ -59,13 +59,14 @@ export function ExportMenu() {
         );
       },
     },
-    {
+    ...(["fixed", "fit"] as const).map((mode) => ({
       icon: "download",
-      label: t("exporting.pdf"),
+      label: mode === "fixed" ? t("exporting.pdf") : t("exporting.pdfFit"),
       run: async () => {
         const { buildPdf, pdfFileName } = await import("./pdf");
         const pdf = buildPdf(doc, {
           lang,
+          scale: mode === "fit" ? ("fit" as const) : undefined,
           statusLabel: (status) => t(`status.${status as Status}`),
           labels: {
             drawingTitle: t("exporting.drawingTitle"),
@@ -93,7 +94,7 @@ export function ExportMenu() {
           "application/pdf",
         );
       },
-    },
+    })),
     {
       icon: "palette",
       label: t("exporting.png"),

@@ -15,8 +15,20 @@ import { bestQuoteForLine } from "@/store/selectors";
 /** Standard drawing scales, most detailed first. */
 const SCALES = [20, 50, 100, 150, 200, 250, 500, 1000];
 
-const A3_LONG = 420;
-const A3_SHORT = 297;
+/** ISO A sheets in paper millimetres, smallest first. */
+const SHEETS = [
+  { name: "a4", short: 210, long: 297 },
+  { name: "a3", short: 297, long: 420 },
+  { name: "a2", short: 420, long: 594 },
+  { name: "a1", short: 594, long: 841 },
+  { name: "a0", short: 841, long: 1189 },
+] as const;
+
+const A3 = SHEETS[1];
+const A3_LONG = A3.long;
+const A3_SHORT = A3.short;
+
+/** Sheet furniture, in millimetres on an A3. Bigger paper scales it up. */
 const MARGIN = 12;
 /** Height of the bottom band that carries the legend and the title block. */
 const BAND_HEIGHT = 58;
@@ -40,11 +52,19 @@ export interface PdfLabels {
   interior: string;
 }
 
-interface Sheet {
+export interface Sheet {
+  /** jsPDF format name, e.g. "a1". */
+  name: string;
   width: number;
   height: number;
   orientation: "portrait" | "landscape";
 }
+
+/** A fixed drawing scale, or "fit" to use the largest scale an A3 can hold. */
+export type ScaleChoice = number | "fit";
+
+/** The scale the plan asks for; a site plan of this size lands on A0. */
+export const DEFAULT_SCALE = 100;
 
 interface Frame {
   x: number;
@@ -53,24 +73,60 @@ interface Frame {
   height: number;
 }
 
+function orient(
+  spec: (typeof SHEETS)[number],
+  orientation: "portrait" | "landscape",
+): Sheet {
+  return orientation === "portrait"
+    ? { name: spec.name, width: spec.short, height: spec.long, orientation }
+    : { name: spec.name, width: spec.long, height: spec.short, orientation };
+}
+
 /** Portrait for a plot deeper than it is wide, landscape otherwise. */
-export function sheetFor(scene: { wMm: number; hMm: number }): Sheet {
-  return scene.hMm > scene.wMm
-    ? { width: A3_SHORT, height: A3_LONG, orientation: "portrait" }
-    : { width: A3_LONG, height: A3_SHORT, orientation: "landscape" };
+export function sheetFor(
+  scene: { wMm: number; hMm: number },
+  spec: (typeof SHEETS)[number] = A3,
+): Sheet {
+  return orient(spec, scene.hMm > scene.wMm ? "portrait" : "landscape");
+}
+
+/**
+ * A sheet plus its furniture. Margins, the title block and every font size are
+ * tuned for A3 and then multiplied by `k`, so a 1:100 site plan on A0 gets a
+ * title block and annotation in proportion instead of A3 furniture lost in a
+ * corner.
+ */
+export interface Paper {
+  sheet: Sheet;
+  margin: number;
+  bandHeight: number;
+  titleBlockWidth: number;
+  k: number;
+}
+
+export function paperFor(sheet: Sheet): Paper {
+  const k = Math.min(sheet.width, sheet.height) / A3_SHORT;
+  return {
+    sheet,
+    margin: MARGIN * k,
+    bandHeight: BAND_HEIGHT * k,
+    titleBlockWidth: TITLE_BLOCK_WIDTH * k,
+    k,
+  };
 }
 
 /** Top edge of the bottom band; nothing from the drawing may cross it. */
-function bandTop(sheet: Sheet): number {
-  return sheet.height - MARGIN - BAND_HEIGHT;
+function bandTop(paper: Paper): number {
+  return paper.sheet.height - paper.margin - paper.bandHeight;
 }
 
-function frameFor(sheet: Sheet): Frame {
+function frameFor(paper: Paper): Frame {
+  const { sheet, margin, bandHeight, k } = paper;
   return {
-    x: MARGIN + 10,
-    y: MARGIN + 12,
-    width: sheet.width - MARGIN * 2 - 16,
-    height: sheet.height - MARGIN * 2 - BAND_HEIGHT - 24,
+    x: margin + 10 * k,
+    y: margin + 12 * k,
+    width: sheet.width - margin * 2 - 16 * k,
+    height: sheet.height - margin * 2 - bandHeight - 24 * k,
   };
 }
 
@@ -83,6 +139,51 @@ export function chooseScale(
     (scale) => scene.wMm / scale <= frame.width && scene.hMm / scale <= frame.height,
   );
   return found ?? SCALES[SCALES.length - 1]!;
+}
+
+function fits(
+  scene: { wMm: number; hMm: number },
+  sheet: Sheet,
+  scale: number,
+): boolean {
+  const frame = frameFor(paperFor(sheet));
+  return scene.wMm / scale <= frame.width && scene.hMm / scale <= frame.height;
+}
+
+/**
+ * Smallest ISO sheet that holds the scene at a fixed scale, preferring the
+ * orientation that matches the plot. Null when even A0 is too small.
+ */
+export function sheetForScale(
+  scene: { wMm: number; hMm: number },
+  scale: number,
+): Sheet | null {
+  const preferred = scene.hMm > scene.wMm ? "portrait" : "landscape";
+  const other = preferred === "portrait" ? "landscape" : "portrait";
+  for (const spec of SHEETS) {
+    for (const orientation of [preferred, other] as const) {
+      const sheet = orient(spec, orientation);
+      if (fits(scene, sheet, scale)) return sheet;
+    }
+  }
+  return null;
+}
+
+/**
+ * Paper and scale for one scene. A fixed scale grows the paper until the
+ * drawing fits, which is how a real drawing set works; "fit" instead keeps A3
+ * and gives up detail. Falling back to "fit" keeps very large plots printable.
+ */
+export function layoutFor(
+  scene: { wMm: number; hMm: number },
+  choice: ScaleChoice,
+): { sheet: Sheet; scale: number } {
+  if (choice !== "fit") {
+    const sheet = sheetForScale(scene, choice);
+    if (sheet) return { sheet, scale: choice };
+  }
+  const sheet = sheetFor(scene);
+  return { sheet, scale: chooseScale(scene, frameFor(paperFor(sheet))) };
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -100,10 +201,11 @@ function drawObject(
   itemType: ItemType,
   project: (xMm: number, yMm: number) => [number, number],
   scale: number,
+  k: number,
 ): void {
   const [r, g, b] = hexToRgb(STATUS_COLOUR[object.status]);
   pdf.setDrawColor(r, g, b);
-  pdf.setLineWidth(0.3);
+  pdf.setLineWidth(0.3 * k);
 
   if (itemType.shape === "circle") {
     const [cx, cy] = project(
@@ -134,13 +236,14 @@ function drawSceneDrawing(
   pdf: jsPDF,
   doc: ProjectDocument,
   scene: Scene,
-  sheet: Sheet,
+  paper: Paper,
+  scale: number,
   labels: PdfLabels,
   lang: Lang,
   heading: string,
-): number {
-  const frame = frameFor(sheet);
-  const scale = chooseScale(scene, frame);
+): void {
+  const { k, margin } = paper;
+  const frame = frameFor(paper);
   const width = scene.wMm / scale;
   const height = scene.hMm / scale;
   const originX = frame.x + (frame.width - width) / 2;
@@ -150,12 +253,12 @@ function drawSceneDrawing(
     originY + yMm / scale,
   ];
 
-  pdf.setFontSize(11);
+  pdf.setFontSize(11 * k);
   pdf.setTextColor(30);
-  pdf.text(heading, MARGIN, MARGIN + 6);
+  pdf.text(heading, margin, margin + 6 * k);
 
   pdf.setDrawColor(216);
-  pdf.setLineWidth(0.1);
+  pdf.setLineWidth(0.1 * k);
   for (let x = 0; x <= scene.wMm; x += 5 * MM_PER_M) {
     const [px] = project(x, 0);
     pdf.line(px, originY, px, originY + height);
@@ -166,100 +269,113 @@ function drawSceneDrawing(
   }
 
   pdf.setDrawColor(50);
-  pdf.setLineWidth(0.6);
+  pdf.setLineWidth(0.6 * k);
   pdf.rect(originX, originY, width, height, "S");
 
   const itemTypes = new Map(doc.itemTypes.map((it) => [it.id, it]));
   for (const object of doc.objects.filter((o) => o.sceneId === scene.id)) {
     const itemType = itemTypes.get(object.itemTypeId);
     if (!itemType) continue;
-    drawObject(pdf, object, itemType, project, scale);
-    if (object.wMm / scale > 14 && object.hMm / scale > 5) {
-      pdf.setFontSize(6);
+    drawObject(pdf, object, itemType, project, scale, k);
+    if (object.wMm / scale > 14 * k && object.hMm / scale > 5 * k) {
+      pdf.setFontSize(6 * k);
       pdf.setTextColor(80);
       const [tx, ty] = project(object.xMm + 250, object.yMm + object.hMm / 2);
       const text = object.label ?? itemTypeName(itemType, lang);
-      pdf.text(fitText(pdf, text, object.wMm / scale - 3), tx, ty);
+      pdf.text(fitText(pdf, text, object.wMm / scale - 3 * k), tx, ty);
     }
   }
 
   // Overall dimensions along the top and the left edge.
   pdf.setDrawColor(90);
-  pdf.setLineWidth(0.2);
-  pdf.setFontSize(7);
+  pdf.setLineWidth(0.2 * k);
+  pdf.setFontSize(7 * k);
   pdf.setTextColor(60);
-  pdf.line(originX, originY - 5, originX + width, originY - 5);
-  pdf.line(originX, originY - 7, originX, originY - 3);
-  pdf.line(originX + width, originY - 7, originX + width, originY - 3);
+  pdf.line(originX, originY - 5 * k, originX + width, originY - 5 * k);
+  pdf.line(originX, originY - 7 * k, originX, originY - 3 * k);
+  pdf.line(
+    originX + width,
+    originY - 7 * k,
+    originX + width,
+    originY - 3 * k,
+  );
   pdf.text(
     `${(scene.wMm / MM_PER_M).toFixed(1)} m`,
-    originX + width / 2 - 6,
-    originY - 7,
+    originX + width / 2 - 6 * k,
+    originY - 7 * k,
   );
-  pdf.line(originX - 5, originY, originX - 5, originY + height);
-  pdf.line(originX - 7, originY, originX - 3, originY);
-  pdf.line(originX - 7, originY + height, originX - 3, originY + height);
+  pdf.line(originX - 5 * k, originY, originX - 5 * k, originY + height);
+  pdf.line(originX - 7 * k, originY, originX - 3 * k, originY);
+  pdf.line(
+    originX - 7 * k,
+    originY + height,
+    originX - 3 * k,
+    originY + height,
+  );
   pdf.text(
     `${(scene.hMm / MM_PER_M).toFixed(1)} m`,
-    originX - 7,
-    originY + height / 2 + 6,
+    originX - 7 * k,
+    originY + height / 2 + 6 * k,
     { angle: 90 },
   );
 
   // Scale bar of ten metres with a five metre tick, in the strip that separates
   // the drawing from the band, so it never lands on the legend.
   const barLength = (10 * MM_PER_M) / scale;
-  const barY = bandTop(sheet) - 7;
+  const barY = bandTop(paper) - 7 * k;
   pdf.setDrawColor(40);
-  pdf.setLineWidth(0.4);
+  pdf.setLineWidth(0.4 * k);
   pdf.line(frame.x, barY, frame.x + barLength, barY);
   for (let metre = 0; metre <= 10; metre += 5) {
     const x = frame.x + (metre * MM_PER_M) / scale;
-    pdf.line(x, barY - 1.6, x, barY + 1.6);
+    pdf.line(x, barY - 1.6 * k, x, barY + 1.6 * k);
   }
-  pdf.setFontSize(6.5);
-  pdf.text("0", frame.x - 1, barY + 5);
-  pdf.text("5", frame.x + barLength / 2 - 1, barY + 5);
-  pdf.text("10 m", frame.x + barLength - 4, barY + 5);
-  pdf.setFontSize(8);
-  pdf.text(`${labels.scale} 1:${scale}`, frame.x + barLength + 10, barY + 1.5);
+  pdf.setFontSize(6.5 * k);
+  pdf.text("0", frame.x - 1 * k, barY + 5 * k);
+  pdf.text("5", frame.x + barLength / 2 - 1 * k, barY + 5 * k);
+  pdf.text("10 m", frame.x + barLength - 4 * k, barY + 5 * k);
+  pdf.setFontSize(8 * k);
+  pdf.text(
+    `${labels.scale} 1:${scale}`,
+    frame.x + barLength + 10 * k,
+    barY + 1.5 * k,
+  );
 
   // North arrow, top right of the drawing.
-  const northX = originX + width + 8;
-  const northY = originY + 10;
-  pdf.setLineWidth(0.5);
-  pdf.line(northX, northY, northX, northY - 9);
-  pdf.line(northX, northY - 9, northX - 2.2, northY - 4.5);
-  pdf.line(northX, northY - 9, northX + 2.2, northY - 4.5);
-  pdf.setFontSize(8);
-  pdf.text(labels.north, northX - 1.4, northY + 4.5);
-
-  return scale;
+  const northX = originX + width + 8 * k;
+  const northY = originY + 10 * k;
+  pdf.setLineWidth(0.5 * k);
+  pdf.line(northX, northY, northX, northY - 9 * k);
+  pdf.line(northX, northY - 9 * k, northX - 2.2 * k, northY - 4.5 * k);
+  pdf.line(northX, northY - 9 * k, northX + 2.2 * k, northY - 4.5 * k);
+  pdf.setFontSize(8 * k);
+  pdf.text(labels.north, northX - 1.4 * k, northY + 4.5 * k);
 }
 
 function drawTitleBlock(
   pdf: jsPDF,
   doc: ProjectDocument,
-  sheet: Sheet,
+  paper: Paper,
   labels: PdfLabels,
   scale: number,
   sheetNumber: string,
 ): void {
-  const x = sheet.width - MARGIN - TITLE_BLOCK_WIDTH;
-  const y = sheet.height - MARGIN - BAND_HEIGHT;
+  const { sheet, margin, bandHeight, titleBlockWidth, k } = paper;
+  const x = sheet.width - margin - titleBlockWidth;
+  const y = sheet.height - margin - bandHeight;
   pdf.setDrawColor(60);
-  pdf.setLineWidth(0.4);
-  pdf.rect(x, y, TITLE_BLOCK_WIDTH, BAND_HEIGHT, "S");
+  pdf.setLineWidth(0.4 * k);
+  pdf.rect(x, y, titleBlockWidth, bandHeight, "S");
 
-  pdf.setFontSize(12);
+  pdf.setFontSize(12 * k);
   pdf.setTextColor(20);
-  pdf.text(doc.project.name, x + 4, y + 9);
-  pdf.setFontSize(8);
+  pdf.text(doc.project.name, x + 4 * k, y + 9 * k);
+  pdf.setFontSize(8 * k);
   pdf.setTextColor(70);
-  pdf.text(labels.drawingTitle, x + 4, y + 15);
+  pdf.text(labels.drawingTitle, x + 4 * k, y + 15 * k);
 
-  pdf.setLineWidth(0.2);
-  pdf.line(x, y + 19, x + TITLE_BLOCK_WIDTH, y + 19);
+  pdf.setLineWidth(0.2 * k);
+  pdf.line(x, y + 19 * k, x + titleBlockWidth, y + 19 * k);
 
   const rows: [string, string][] = [
     [labels.scale, `1:${scale}`],
@@ -272,48 +388,49 @@ function drawTitleBlock(
     ],
     [labels.sheet, sheetNumber],
   ];
-  pdf.setFontSize(7.5);
+  pdf.setFontSize(7.5 * k);
   rows.forEach(([label, value], index) => {
-    const rowY = y + 25.5 + index * 6;
+    const rowY = y + (25.5 + index * 6) * k;
     pdf.setTextColor(120);
-    pdf.text(label, x + 4, rowY);
+    pdf.text(label, x + 4 * k, rowY);
     pdf.setTextColor(30);
-    pdf.text(value, x + 36, rowY);
+    pdf.text(value, x + 36 * k, rowY);
   });
 
-  pdf.setFontSize(6.5);
+  pdf.setFontSize(6.5 * k);
   pdf.setTextColor(150);
-  pdf.text(labels.drawnBy, x + 4, y + BAND_HEIGHT - 4);
+  pdf.text(labels.drawnBy, x + 4 * k, y + bandHeight - 4 * k);
 }
 
 function drawLegend(
   pdf: jsPDF,
   doc: ProjectDocument,
   scene: Scene,
-  sheet: Sheet,
+  paper: Paper,
   labels: PdfLabels,
   lang: Lang,
   statusLabel: (status: string) => string,
 ): void {
-  const x = MARGIN;
-  const y = bandTop(sheet);
-  const rowHeight = 5;
-  const rowsPerColumn = Math.floor((BAND_HEIGHT - 14) / rowHeight);
-  pdf.setFontSize(8);
+  const { sheet, margin, bandHeight, titleBlockWidth, k } = paper;
+  const x = margin;
+  const y = bandTop(paper);
+  const rowHeight = 5 * k;
+  const rowsPerColumn = Math.floor((bandHeight - 14 * k) / rowHeight);
+  pdf.setFontSize(8 * k);
   pdf.setTextColor(40);
-  pdf.text(labels.legend, x, y + 4);
+  pdf.text(labels.legend, x, y + 4 * k);
 
-  const statusColumnWidth = 42;
+  const statusColumnWidth = 42 * k;
   const statuses = [...new Set(doc.objects.map((object) => object.status))];
-  pdf.setFontSize(6.5);
+  pdf.setFontSize(6.5 * k);
   statuses.forEach((status, index) => {
     const rowX = x + Math.floor(index / rowsPerColumn) * statusColumnWidth;
-    const rowY = y + 10 + (index % rowsPerColumn) * rowHeight;
+    const rowY = y + 10 * k + (index % rowsPerColumn) * rowHeight;
     const [r, g, b] = hexToRgb(STATUS_COLOUR[status]);
     pdf.setFillColor(r, g, b);
-    pdf.rect(rowX, rowY - 2.4, 3, 3, "F");
+    pdf.rect(rowX, rowY - 2.4 * k, 3 * k, 3 * k, "F");
     pdf.setTextColor(70);
-    pdf.text(statusLabel(status), rowX + 4.5, rowY);
+    pdf.text(statusLabel(status), rowX + 4.5 * k, rowY);
   });
 
   // What is on this sheet, counted per item type. The number of columns follows
@@ -323,9 +440,9 @@ function drawLegend(
     counts.set(object.itemTypeId, (counts.get(object.itemTypeId) ?? 0) + 1);
   }
   const statusColumns = Math.ceil(statuses.length / rowsPerColumn) || 1;
-  const columnX = x + statusColumns * statusColumnWidth + 8;
-  const available = sheet.width - MARGIN - TITLE_BLOCK_WIDTH - 6 - columnX;
-  const columnWidth = 48;
+  const columnX = x + statusColumns * statusColumnWidth + 8 * k;
+  const available = sheet.width - margin - titleBlockWidth - 6 * k - columnX;
+  const columnWidth = 48 * k;
   const columnCount = Math.max(1, Math.floor(available / columnWidth));
   const entries = [...counts.entries()]
     .map(([itemTypeId, count]) => {
@@ -336,17 +453,17 @@ function drawLegend(
     .slice(0, columnCount * rowsPerColumn);
 
   if (available < columnWidth / 2) return;
-  pdf.setFontSize(8);
+  pdf.setFontSize(8 * k);
   pdf.setTextColor(40);
-  pdf.text(labels.schedule, columnX, y + 4);
-  pdf.setFontSize(6.5);
-  const nameWidth = columnWidth - 12;
+  pdf.text(labels.schedule, columnX, y + 4 * k);
+  pdf.setFontSize(6.5 * k);
+  const nameWidth = columnWidth - 12 * k;
   entries.forEach((entry, index) => {
     const rowX = columnX + Math.floor(index / rowsPerColumn) * columnWidth;
-    const rowY = y + 10 + (index % rowsPerColumn) * rowHeight;
+    const rowY = y + 10 * k + (index % rowsPerColumn) * rowHeight;
     pdf.setTextColor(70);
     pdf.text(`${entry.count}×`, rowX, rowY);
-    pdf.text(fitText(pdf, entry.name, nameWidth), rowX + 8, rowY);
+    pdf.text(fitText(pdf, entry.name, nameWidth), rowX + 8 * k, rowY);
   });
 }
 
@@ -458,30 +575,36 @@ export interface PdfOptions {
   lang: Lang;
   labels: PdfLabels;
   statusLabel: (status: string) => string;
+  /** Fixed drawing scale, or "fit" to squeeze every scene onto A3. */
+  scale?: ScaleChoice;
   includeInteriors?: boolean;
   includeSchedule?: boolean;
 }
 
 /**
  * A true-scale drawing rather than a screenshot: geometry is drawn from the
- * model in paper millimetres on A3, with a title block, scale bar, north arrow,
- * legend, per-sheet item counts and a priced schedule at the back.
+ * model in paper millimetres, at 1:100 by default, with a title block, scale
+ * bar, north arrow, legend, per-sheet item counts and a priced schedule at the
+ * back. Each sheet gets the smallest ISO paper its drawing fits on.
  */
 export function buildPdf(doc: ProjectDocument, options: PdfOptions): jsPDF {
+  const choice = options.scale ?? DEFAULT_SCALE;
   const beach = doc.scenes.find((scene) => scene.kind === "beach");
-  const firstSheet = sheetFor(beach ?? { wMm: 1, hMm: 1 });
+  const first = layoutFor(beach ?? { wMm: 1, hMm: 1 }, choice);
   const pdf = new jsPDF({
-    orientation: firstSheet.orientation,
+    orientation: first.sheet.orientation,
     unit: "mm",
-    format: "a3",
+    format: first.sheet.name,
   });
   if (!beach) return pdf;
 
-  const scale = drawSceneDrawing(
+  const firstPaper = paperFor(first.sheet);
+  drawSceneDrawing(
     pdf,
     doc,
     beach,
-    firstSheet,
+    firstPaper,
+    first.scale,
     options.labels,
     options.lang,
     `${doc.project.name} — ${options.labels.drawingTitle}`,
@@ -490,12 +613,12 @@ export function buildPdf(doc: ProjectDocument, options: PdfOptions): jsPDF {
     pdf,
     doc,
     beach,
-    firstSheet,
+    firstPaper,
     options.labels,
     options.lang,
     options.statusLabel,
   );
-  drawTitleBlock(pdf, doc, firstSheet, options.labels, scale, "1");
+  drawTitleBlock(pdf, doc, firstPaper, options.labels, first.scale, "1");
 
   if (options.includeInteriors !== false) {
     const interiors = doc.scenes.filter((scene) => scene.kind === "interior");
@@ -506,16 +629,18 @@ export function buildPdf(doc: ProjectDocument, options: PdfOptions): jsPDF {
       const parentType = parent
         ? doc.itemTypes.find((it) => it.id === parent.itemTypeId)
         : null;
-      const sheet = sheetFor(scene);
-      pdf.addPage("a3", sheet.orientation);
+      const { sheet, scale } = layoutFor(scene, choice);
+      const paper = paperFor(sheet);
+      pdf.addPage(sheet.name, sheet.orientation);
       const name =
         parent?.label ??
         (parentType ? itemTypeName(parentType, options.lang) : scene.name);
-      const interiorScale = drawSceneDrawing(
+      drawSceneDrawing(
         pdf,
         doc,
         scene,
-        sheet,
+        paper,
+        scale,
         options.labels,
         options.lang,
         `${name} — ${options.labels.interior} · ${areaM2(
@@ -527,19 +652,12 @@ export function buildPdf(doc: ProjectDocument, options: PdfOptions): jsPDF {
         pdf,
         doc,
         scene,
-        sheet,
+        paper,
         options.labels,
         options.lang,
         options.statusLabel,
       );
-      drawTitleBlock(
-        pdf,
-        doc,
-        sheet,
-        options.labels,
-        interiorScale,
-        `${index + 2}`,
-      );
+      drawTitleBlock(pdf, doc, paper, options.labels, scale, `${index + 2}`);
     }
   }
 

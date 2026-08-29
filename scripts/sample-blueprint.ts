@@ -111,33 +111,38 @@ const doc: ProjectDocument = syncDerived(
 const dxf = buildDxf(doc, { lang: "nl" });
 writeFileSync(`/tmp/${dxfFileName(doc)}`, dxf);
 
-const pdf = buildPdf(doc, {
-  lang: "nl",
-  statusLabel: (status) => status.replace(/_/g, " "),
-  labels: {
-    drawingTitle: "Situatietekening",
-    legend: "Legenda",
-    schedule: "Stuklijst",
-    scale: "Schaal",
-    date: "Datum",
-    drawnBy: "Getekend met Strand",
-    north: "N",
-    qty: "Aantal",
-    status: "Status",
-    budget: "Budget",
-    quoted: "Geoffreerd",
-    total: "Totaal",
-    plot: "Perceel",
-    sheet: "Blad",
-    interior: "Interieur",
-  },
-});
-writeFileSync(
-  `/tmp/${pdfFileName(doc)}`,
-  Buffer.from(pdf.output("arraybuffer")),
-);
+const labels = {
+  drawingTitle: "Situatietekening",
+  legend: "Legenda",
+  schedule: "Stuklijst",
+  scale: "Schaal",
+  date: "Datum",
+  drawnBy: "Getekend met Strand",
+  north: "N",
+  qty: "Aantal",
+  status: "Status",
+  budget: "Budget",
+  quoted: "Geoffreerd",
+  total: "Totaal",
+  plot: "Perceel",
+  sheet: "Blad",
+  interior: "Interieur",
+};
 
 console.log(`objects: ${doc.objects.length}`);
 console.log(`lines: ${doc.procurementLines.length}`);
 console.log(`dxf: /tmp/${dxfFileName(doc)} (${dxf.length} bytes)`);
-console.log(`pdf: /tmp/${pdfFileName(doc)}`);
+
+// Both scale modes, so the fixed 1:100 sheets and the A3 fallback can be
+// eyeballed side by side.
+for (const scale of [100, "fit"] as const) {
+  const pdf = buildPdf(doc, {
+    lang: "nl",
+    scale,
+    statusLabel: (status) => status.replace(/_/g, " "),
+    labels,
+  });
+  const path = `/tmp/${scale === "fit" ? "fit-" : ""}${pdfFileName(doc)}`;
+  writeFileSync(path, Buffer.from(pdf.output("arraybuffer")));
+  console.log(`pdf (${scale}): ${path}`);
+}

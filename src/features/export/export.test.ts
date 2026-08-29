@@ -9,7 +9,7 @@ import {
 import { syncDerived } from "@/domain/sync";
 import { mToMm } from "@/lib/units";
 import { buildDxf } from "./dxf";
-import { chooseScale } from "./pdf";
+import { chooseScale, layoutFor, sheetForScale } from "./pdf";
 import { parseProject, serialiseProject } from "./projectFile";
 
 const planned = () =>
@@ -98,6 +98,48 @@ describe("chooseScale", () => {
     expect(
       chooseScale({ ...beach, wMm: mToMm(5000), hMm: mToMm(5000) }, frame),
     ).toBe(1000);
+  });
+});
+
+describe("sheetForScale", () => {
+  it("grows the paper until the drawing fits at the asked scale", () => {
+    // 60 x 70 m at 1:100 is 600 x 700 mm of drawing, which only A0 holds.
+    expect(sheetForScale(beach, 100)).toMatchObject({
+      name: "a0",
+      orientation: "portrait",
+    });
+    // A 12 x 5 m bar interior is 120 x 50 mm, so A4 is plenty.
+    expect(
+      sheetForScale({ ...beach, wMm: mToMm(12), hMm: mToMm(5) }, 100),
+    ).toMatchObject({ name: "a4", orientation: "landscape" });
+  });
+
+  it("gives up when even A0 is too small", () => {
+    expect(sheetForScale({ wMm: mToMm(5000), hMm: mToMm(5000) }, 100)).toBeNull();
+  });
+});
+
+describe("layoutFor", () => {
+  it("keeps the requested scale and reports the paper it needs", () => {
+    expect(layoutFor(beach, 100)).toMatchObject({
+      scale: 100,
+      sheet: { name: "a0" },
+    });
+  });
+
+  it("falls back to fitting an A3 when the scale cannot be honoured", () => {
+    const huge = { wMm: mToMm(5000), hMm: mToMm(5000) };
+    expect(layoutFor(huge, 100)).toMatchObject({
+      scale: 1000,
+      sheet: { name: "a3" },
+    });
+  });
+
+  it("fits the plot on A3 when asked to", () => {
+    // A3 portrait leaves a 257 x 314 mm frame, which holds 60 x 70 m at 1:250.
+    const { sheet, scale } = layoutFor(beach, "fit");
+    expect(sheet).toMatchObject({ name: "a3", orientation: "portrait" });
+    expect(scale).toBe(250);
   });
 });
 
