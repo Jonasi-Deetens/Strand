@@ -74,11 +74,32 @@ describe("migrations and catalogue seed", () => {
     expect(toItemType(ligbed[0]!).image).toBe("catalog/it_ligbed.webp");
   });
 
+  it("gives every catalogue type a picture, including a 7 x 7 m parasol", async () => {
+    const rows = await driver.select<ItemTypeRow>("SELECT * FROM item_types");
+    const missing = rows.filter((row) => !row.image);
+    expect(missing.map((row) => row.id)).toEqual([]);
+    const xxl = toItemType(rows.find((row) => row.id === "it_parasol_xxl")!);
+    expect(xxl).toMatchObject({
+      defaultWMm: 7000,
+      defaultHMm: 7000,
+      unitPriceCents: 1_500_000,
+      image: "catalog/it_parasol_xxl.webp",
+    });
+    const absent = rows
+      .map((row) => row.image!)
+      .filter((image) => !existsSync(path.join(process.cwd(), "public", image)));
+    expect(absent).toEqual([]);
+  });
+
   it("draws parasols as white squares and creates a cabin stock table", async () => {
     const rows = await driver.select<ItemTypeRow>(
-      "SELECT * FROM item_types WHERE id IN ('it_parasol', 'it_parasol_xl')",
+      "SELECT * FROM item_types WHERE id LIKE 'it_parasol%'",
     );
-    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.id).sort()).toEqual([
+      "it_parasol",
+      "it_parasol_xl",
+      "it_parasol_xxl",
+    ]);
     for (const row of rows) {
       expect(toItemType(row)).toMatchObject({
         shape: "rect",
