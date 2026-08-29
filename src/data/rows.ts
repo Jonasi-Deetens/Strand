@@ -73,6 +73,7 @@ export interface ItemTypeRow {
   unit_price_cents: number;
   target_area_m2: number | null;
   colour: string;
+  image: string | null;
 }
 
 export const toItemType = (row: ItemTypeRow): ItemType => ({
@@ -90,6 +91,7 @@ export const toItemType = (row: ItemTypeRow): ItemType => ({
   unitPriceCents: row.unit_price_cents,
   targetAreaM2: row.target_area_m2,
   colour: row.colour,
+  image: row.image,
 });
 
 export interface ObjectRow {

@@ -46,6 +46,7 @@ import { registerStage } from "@/features/export/png";
 import { registerDropTarget } from "./paletteDrag";
 import { fitView, gridStepMm, toModel, zoomAt, type Size } from "./canvasUtils";
 import { CanvasRulers } from "./CanvasRulers";
+import { FootprintImage } from "./FootprintImage";
 import { ObjectShape } from "./ObjectShape";
 import { useCanvasTheme } from "./useCanvasTheme";
 
@@ -583,7 +584,7 @@ export function PlanCanvas({
       !dragged && tool === "array"
         ? arrayPositions({ ...anchor, w: wMm, h: hMm }, arraySettings)
         : [anchor];
-    return { positions, wMm, hMm, colour: item.colour };
+    return { positions, wMm, hMm, colour: item.colour, itemType: item };
   }, [
     arraySettings,
     itemTypes,
@@ -764,18 +765,27 @@ export function PlanCanvas({
             ))}
 
             {ghost?.positions.map((position, index) => (
-              <Rect
+              <Group
                 key={index}
                 x={position.x}
                 y={position.y}
-                width={ghost.wMm}
-                height={ghost.hMm}
-                fill={`${ghost.colour}33`}
-                stroke={ghost.colour}
-                strokeWidth={1.5 / view.scale}
-                dash={[400 / view.scale, 250 / view.scale]}
                 listening={false}
-              />
+              >
+                <Rect
+                  width={ghost.wMm}
+                  height={ghost.hMm}
+                  fill={`${ghost.colour}22`}
+                  stroke={ghost.colour}
+                  strokeWidth={1.5 / view.scale}
+                  dash={[400 / view.scale, 250 / view.scale]}
+                />
+                <FootprintImage
+                  itemType={ghost.itemType}
+                  wMm={ghost.wMm}
+                  hMm={ghost.hMm}
+                  opacity={0.55}
+                />
+              </Group>
             ))}
 
             {band && (

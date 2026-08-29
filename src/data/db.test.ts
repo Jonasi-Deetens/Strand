@@ -41,6 +41,37 @@ describe("migrations and catalogue seed", () => {
     ).toBeGreaterThan(5);
   });
 
+  it("seeds measured outdoor types with a top-down image path", async () => {
+    const rows = await driver.select<ItemTypeRow>(
+      "SELECT * FROM item_types WHERE id IN ('it_regisseursstoel', 'it_houten_lounge', 'it_wipkip', 'it_helmgras')",
+    );
+    const byId = Object.fromEntries(
+      rows.map((row) => [row.id, toItemType(row)]),
+    );
+    expect(byId.it_regisseursstoel).toMatchObject({
+      defaultWMm: 550,
+      defaultHMm: 540,
+      image: "catalog/it_regisseursstoel.webp",
+    });
+    expect(byId.it_houten_lounge).toMatchObject({
+      defaultWMm: 2000,
+      defaultHMm: 900,
+      image: "catalog/it_houten_lounge.webp",
+    });
+    expect(byId.it_wipkip).toMatchObject({
+      defaultWMm: 900,
+      defaultHMm: 400,
+    });
+    expect(byId.it_helmgras).toMatchObject({
+      shape: "circle",
+      defaultWMm: 800,
+    });
+    const ligbed = await driver.select<ItemTypeRow>(
+      "SELECT * FROM item_types WHERE id = 'it_ligbed'",
+    );
+    expect(toItemType(ligbed[0]!).image).toBe("catalog/it_ligbed.webp");
+  });
+
   it("puts the toilet building on the same 60 m2 target as the bar", async () => {
     const rows = await driver.select<ItemTypeRow>(
       "SELECT * FROM item_types WHERE id = 'it_toilet'",

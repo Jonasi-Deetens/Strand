@@ -526,6 +526,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         unitPriceCents: partial.unitPriceCents ?? 0,
         targetAreaM2: partial.targetAreaM2 ?? null,
         colour: partial.colour ?? "#43b6ba",
+        image: partial.image ?? null,
       };
       commit({ ...doc, itemTypes: [...doc.itemTypes, itemType] });
       return itemType.id;
