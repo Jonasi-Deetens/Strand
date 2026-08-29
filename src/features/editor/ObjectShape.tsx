@@ -15,6 +15,8 @@ interface ObjectShapeProps {
   scale: number;
   showLabel: boolean;
   draggable: boolean;
+  /** False for the place, array and measure tools, which own every click. */
+  selectable: boolean;
   /** Items drawn on this building's own interior sheet. */
   interiorCount: number;
   onSelect: (id: string, additive: boolean) => void;
@@ -38,6 +40,7 @@ export const ObjectShape = memo(function ObjectShape({
   scale,
   showLabel,
   draggable,
+  selectable,
   interiorCount,
   onSelect,
   onOpenInterior,
@@ -63,6 +66,7 @@ export const ObjectShape = memo(function ObjectShape({
       offsetY={object.hMm / 2}
       rotation={object.rotationDeg}
       draggable={draggable && !object.locked}
+      listening={selectable}
       onMouseDown={(event) => {
         event.cancelBubble = true;
         onSelect(object.id, event.evt.shiftKey || event.evt.metaKey);

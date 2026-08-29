@@ -625,6 +625,7 @@ export function PlanCanvas({
                   scale={view.scale}
                   showLabel={showLabels}
                   interiorCount={interiorCounts.get(object.id) ?? 0}
+                  selectable={tool === "select"}
                   draggable={
                     tool === "select" &&
                     !lockedCategories.includes(itemType.category)
