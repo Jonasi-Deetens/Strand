@@ -12,7 +12,11 @@ import {
   Textarea,
 } from "@/components/ui";
 import { PageHeader } from "@/components/PageHeader";
-import { type Offerte, type OfferteStatus } from "@/domain/types";
+import {
+  type Offerte,
+  type OfferteStatus,
+  type ProcurementLine,
+} from "@/domain/types";
 import { STATUS_COLOUR } from "@/domain/status";
 import {
   DEFAULT_VAT_PCT,
@@ -179,6 +183,23 @@ function OfferteDetail({ offerte }: { offerte: Offerte }) {
   const lines = doc.offerteLines.filter((line) => line.offerteId === offerte.id);
   const totals = offerteTotals(doc, offerte.id);
 
+  // Split the link target list: the plan can produce dozens of lines, and a flat
+  // alphabetical list of everything is the hardest possible thing to pick from.
+  const linkGroups = useMemo(() => {
+    const byTitle = (a: ProcurementLine, b: ProcurementLine) =>
+      a.title.localeCompare(b.title);
+    return [
+      {
+        label: t("procurement.derived"),
+        lines: doc.procurementLines.filter((line) => line.derived).sort(byTitle),
+      },
+      {
+        label: t("procurement.manual"),
+        lines: doc.procurementLines.filter((line) => !line.derived).sort(byTitle),
+      },
+    ].filter((group) => group.lines.length > 0);
+  }, [doc.procurementLines, t]);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="panel grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -333,18 +354,34 @@ function OfferteDetail({ offerte }: { offerte: Offerte }) {
                 <td className="px-3 py-1.5">
                   <Select
                     value={line.procurementLineId ?? ""}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      const procurementLineId = event.target.value || null;
+                      const target = doc.procurementLines.find(
+                        (candidate) => candidate.id === procurementLineId,
+                      );
                       updateOfferteLine(line.id, {
-                        procurementLineId: event.target.value || null,
-                      })
-                    }
+                        procurementLineId,
+                        // A quote almost always describes the post it is linked
+                        // to, so save the retyping unless there is already text.
+                        ...(target && line.description.trim() === ""
+                          ? { description: target.title }
+                          : {}),
+                      });
+                    }}
                     className="h-7 w-52 text-[11px]"
                   >
                     <option value="">{t("offertes.unlinked")}</option>
-                    {doc.procurementLines.map((procurementLine) => (
-                      <option key={procurementLine.id} value={procurementLine.id}>
-                        {procurementLine.title}
-                      </option>
+                    {linkGroups.map((group) => (
+                      <optgroup key={group.label} label={group.label}>
+                        {group.lines.map((procurementLine) => (
+                          <option
+                            key={procurementLine.id}
+                            value={procurementLine.id}
+                          >
+                            {procurementLine.title}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </Select>
                 </td>
