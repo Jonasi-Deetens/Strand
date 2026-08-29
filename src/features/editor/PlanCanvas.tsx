@@ -771,26 +771,30 @@ export function PlanCanvas({
               </>
             )}
 
-            <Transformer
-              ref={transformerRef}
-              rotateEnabled
-              keepRatio={false}
-              rotationSnaps={[0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180]}
-              anchorSize={9 / view.scale}
-              anchorStroke={colours.accent}
-              anchorFill="#ffffff"
-              anchorCornerRadius={2 / view.scale}
-              borderStroke={colours.accent}
-              borderStrokeWidth={1.4 / view.scale}
-              rotateAnchorOffset={26 / view.scale}
-              onTransformEnd={handleTransformEnd}
-              boundBoxFunc={(_oldBox, newBox) => ({
-                ...newBox,
-                width: Math.max(SNAP_MM * 2 * view.scale, newBox.width),
-                height: Math.max(SNAP_MM * 2 * view.scale, newBox.height),
-              })}
-            />
           </Group>
+
+          {/* Outside the scaled group on purpose: the transformer works in
+              absolute stage pixels, so inside it every anchor would be blown
+              up by the plot scale. */}
+          <Transformer
+            ref={transformerRef}
+            rotateEnabled
+            keepRatio={false}
+            rotationSnaps={[0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180]}
+            anchorSize={9}
+            anchorStroke={colours.accent}
+            anchorFill="#ffffff"
+            anchorCornerRadius={2}
+            borderStroke={colours.accent}
+            borderStrokeWidth={1.4}
+            rotateAnchorOffset={26}
+            onTransformEnd={handleTransformEnd}
+            boundBoxFunc={(_oldBox, newBox) => ({
+              ...newBox,
+              width: Math.max(SNAP_MM * 2 * view.scale, newBox.width),
+              height: Math.max(SNAP_MM * 2 * view.scale, newBox.height),
+            })}
+          />
         </Layer>
       </Stage>
 
