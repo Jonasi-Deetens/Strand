@@ -161,8 +161,10 @@ export function PlanPage() {
             onOpenInterior={handleOpenInterior}
           />
           {sceneObjects.length === 0 && (
+            {/* Never interactive: it sits over the middle of the canvas, which
+                is exactly where the first object gets placed. */}
             <div className="pointer-events-none absolute inset-0 grid place-items-center p-8">
-              <div className="pointer-events-auto max-w-sm">
+              <div className="max-w-sm">
                 <EmptyState
                   icon={
                     <Icon
