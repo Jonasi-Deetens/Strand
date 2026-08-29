@@ -2,6 +2,7 @@ import init from "../../migrations/001_init.sql?raw";
 import catalog from "../../migrations/002_catalog.sql?raw";
 import toiletTarget from "../../migrations/003_toilet_target.sql?raw";
 import catalogImages from "../../migrations/004_catalog_images.sql?raw";
+import allCatalogImages from "../../migrations/005_all_catalog_images.sql?raw";
 
 export interface MigrationScript {
   version: number;
@@ -15,4 +16,5 @@ export const MIGRATIONS: MigrationScript[] = [
   { version: 2, name: "catalog", sql: catalog },
   { version: 3, name: "toilet_target", sql: toiletTarget },
   { version: 4, name: "catalog_images", sql: catalogImages },
+  { version: 5, name: "all_catalog_images", sql: allCatalogImages },
 ];
