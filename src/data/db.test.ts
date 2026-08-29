@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { createWasmDriver } from "./wasmDriver";
 import { type SqlDriver } from "./driver";
@@ -70,6 +72,23 @@ describe("migrations and catalogue seed", () => {
       "SELECT * FROM item_types WHERE id = 'it_ligbed'",
     );
     expect(toItemType(ligbed[0]!).image).toBe("catalog/it_ligbed.webp");
+  });
+
+  it("gives every catalogue type a picture, including a 7 x 7 m parasol", async () => {
+    const rows = await driver.select<ItemTypeRow>("SELECT * FROM item_types");
+    const missing = rows.filter((row) => !row.image);
+    expect(missing.map((row) => row.id)).toEqual([]);
+    const xxl = toItemType(rows.find((row) => row.id === "it_parasol_xxl")!);
+    expect(xxl).toMatchObject({
+      defaultWMm: 7000,
+      defaultHMm: 7000,
+      unitPriceCents: 1_500_000,
+      image: "catalog/it_parasol_xxl.webp",
+    });
+    const absent = rows
+      .map((row) => row.image!)
+      .filter((image) => !existsSync(path.join(process.cwd(), "public", image)));
+    expect(absent).toEqual([]);
   });
 
   it("puts the toilet building on the same 60 m2 target as the bar", async () => {
