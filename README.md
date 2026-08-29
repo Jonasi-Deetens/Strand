@@ -10,10 +10,12 @@ on your machine in a local SQLite file.
 
 ## What it does
 
-- **Plan** — a 60 × 70 m beach on a metre grid, with a searchable catalogue,
-  drag to place, snapping, alignment guides, an array tool for rows of cabins or
-  umbrellas, a measure tool, layer locks and undo/redo. Double-click the bar or
-  the toilet block to draw its interior on its own sheet.
+- **Plan** — a 60 × 70 m beach on a metre grid with rulers, a searchable
+  catalogue, drag to place, snapping, alignment guides, an array tool for rows of
+  cabins or umbrellas, a measure tool, layer locks and undo/redo. The selected
+  building carries a live size and area readout, so you can resize the bar until
+  it hits its 60 m² target. Double-click the bar or the toilet block to draw its
+  interior on its own sheet.
 - **Taken** — every object rolls up into a procurement line (40 cabins is one
   line with quantity 40), and each line gets a task. Manual items that you
   cannot draw — warehouse rent, permits, utilities, insurance — live in the same
@@ -23,11 +25,14 @@ on your machine in a local SQLite file.
   budget.
 - **Overzicht** — budget versus quoted versus committed, progress per category,
   the next tasks with overdue flagged, and quotes about to expire.
-- **Export** — a real DXF for CAD, a true-scale PDF blueprint (A3, standard
-  scale with title block, scale bar, north arrow, legend and a priced schedule),
-  a PNG of the canvas, and a portable `.json` project file for backup or sharing.
+- **Export** — a real DXF for CAD, and a true-scale PDF blueprint with a title
+  block, scale bar, north arrow, legend and a priced schedule. The PDF comes in
+  two flavours: **1:100**, which puts each sheet on the smallest ISO paper its
+  drawing fits (a 60 × 70 m beach lands on A0, a bar interior on A4), and
+  **fitted to A3** for something you can print at home. Also a PNG of the canvas
+  and a portable `.json` project file for backup or sharing.
 
-Statuses drive every colour: `nodig`, `offerte-aangevraagd`, `offerte-ontvangen`,
+Statuses drive every colour: `nodig`, `offerte_aangevraagd`, `offerte_ontvangen`,
 `besteld`, `geleverd`, `gebouwd`, `vervallen`.
 
 ## Requirements
@@ -105,12 +110,18 @@ A few decisions worth knowing:
   procurement lines and their tasks from the objects on the plan, rolling object
   statuses up into a line status.
 - **The PDF is drawn from the model**, not screenshotted, so it is vector output
-  at a true scale that a contractor can measure on paper.
+  at a true scale that a contractor can measure on paper. Sheet furniture and
+  annotation are sized for A3 and scaled with the paper, so a 1:100 A0 sheet does
+  not end up with an A3 title block in the corner.
+- **Writes are one transaction.** The SQL plugin hands out a pooled connection
+  per call, so a `BEGIN` from the frontend cannot be trusted to stay on one
+  connection. The `apply_batch` command in `src-tauri/src/lib.rs` takes the pool
+  out of the plugin's state and drives the transaction in Rust instead.
 
 ## Storage and backups
 
-The database lives next to the app's data directory as `strand.db`
-(`~/.local/share/nl.strand.planner` on Linux,
+The database lives in the app's config directory as `strand.db`
+(`~/.config/nl.strand.planner` on Linux,
 `~/Library/Application Support/nl.strand.planner` on macOS,
 `%APPDATA%\nl.strand.planner` on Windows). Nothing leaves the machine.
 
@@ -123,3 +134,6 @@ Importing replaces the current project.
 `V` select · `R` array · `M` measure · `G` grid · `S` next status · `L` lock ·
 arrows nudge (Shift for 1 m) · `⌘/Ctrl+D` duplicate · `⌘/Ctrl+Z` undo ·
 `⌘/Ctrl+⇧+Z` redo · `?` shows the full list.
+
+The toolbar also toggles the grid, the rulers, object labels and snapping, and
+switches colour between per status and per item type.

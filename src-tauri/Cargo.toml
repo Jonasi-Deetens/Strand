@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "Strand - 2D beach designer and build tracker for a beach bar"
 authors = ["Strand"]
 edition = "2021"
-rust-version = "1.77.2"
+# A transitive dependency of the SQL plugin needs edition 2024.
+rust-version = "1.85"
 
 [lib]
 name = "strand_lib"
