@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Icon, ICON_PATHS } from "@/components/Icon";
+import { CatalogThumb } from "@/features/editor/CatalogThumb";
 import {
   Badge,
   Button,
@@ -237,15 +238,7 @@ function CatalogRow({
     <tr className="border-b border-subtle last:border-b-0">
       <td className="px-3 py-1.5">
         <div className="flex items-center gap-2">
-          <span
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-md"
-            style={{
-              backgroundColor: `${itemType.colour}1f`,
-              color: itemType.colour,
-            }}
-          >
-            <Icon name={itemType.icon} size={15} />
-          </span>
+          <CatalogThumb itemType={itemType} size={28} />
           <div className="min-w-0">
             <input
               value={itemType.nameNl}

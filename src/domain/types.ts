@@ -70,6 +70,8 @@ export interface ItemType {
   /** Target footprint in m2, e.g. 60 for the bar. Null when not applicable. */
   targetAreaM2: number | null;
   colour: string;
+  /** Public path to a top-down plan image, e.g. `catalog/it_stoel.webp`. */
+  image: string | null;
 }
 
 export interface PlanObject {

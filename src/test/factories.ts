@@ -25,6 +25,7 @@ export const barType: ItemType = {
   unitPriceCents: 7500000,
   targetAreaM2: 60,
   colour: "#b58f57",
+  image: null,
 };
 
 export const cabinType: ItemType = {
@@ -42,6 +43,7 @@ export const cabinType: ItemType = {
   unitPriceCents: 145000,
   targetAreaM2: null,
   colour: "#43b6ba",
+  image: null,
 };
 
 export const beach: Scene = {

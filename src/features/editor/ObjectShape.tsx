@@ -3,8 +3,11 @@ import { Circle, Group, Path, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import { ICON_PATHS } from "@/components/Icon";
 import { type ItemType, type PlanObject } from "@/domain/types";
+import { catalogImageUrl } from "@/lib/catalogImage";
 import { objectStyle } from "./canvasUtils";
 import { type ColourMode } from "@/store/useEditorStore";
+import { FootprintImage } from "./FootprintImage";
+import { useCatalogImage } from "./useCatalogImage";
 
 interface ObjectShapeProps {
   object: PlanObject;
@@ -57,6 +60,7 @@ export const ObjectShape = memo(function ObjectShape({
   const iconScale = iconSize / 24;
   const labelSize = 13 / scale;
   const showText = showLabel && object.wMm * scale > 46;
+  const picture = useCatalogImage(catalogImageUrl(itemType.image));
 
   return (
     <Group
@@ -91,44 +95,53 @@ export const ObjectShape = memo(function ObjectShape({
           x={object.wMm / 2}
           y={object.hMm / 2}
           radius={Math.min(object.wMm, object.hMm) / 2}
-          fill={style.fill}
+          fill={picture ? `${style.stroke}18` : style.fill}
           stroke={style.stroke}
           strokeWidth={strokeWidth}
-          dash={style.dash}
+          dash={picture ? undefined : style.dash}
         />
       ) : (
         <Rect
           width={object.wMm}
           height={object.hMm}
           cornerRadius={Math.min(80, object.wMm * 0.04)}
-          fill={style.fill}
+          fill={picture ? `${style.stroke}18` : style.fill}
           stroke={style.stroke}
           strokeWidth={strokeWidth}
-          dash={style.dash}
+          dash={picture ? undefined : style.dash}
         />
       )}
 
-      <Group
-        x={object.wMm / 2 - iconSize / 2}
-        y={object.hMm / 2 - iconSize / 2}
-        scaleX={iconScale}
-        scaleY={iconScale}
-        opacity={style.iconOpacity}
-        listening={false}
-      >
-        {(ICON_PATHS[itemType.icon] ?? ICON_PATHS.box!)
-          .split(" M")
-          .map((segment, index) => (
-            <Path
-              key={index}
-              data={index === 0 ? segment : `M${segment}`}
-              stroke={style.stroke}
-              strokeWidth={1.6 / iconScale / scale}
-              lineCap="round"
-              lineJoin="round"
-            />
-          ))}
-      </Group>
+      {picture ? (
+        <FootprintImage
+          itemType={itemType}
+          wMm={object.wMm}
+          hMm={object.hMm}
+          opacity={style.iconOpacity}
+        />
+      ) : (
+        <Group
+          x={object.wMm / 2 - iconSize / 2}
+          y={object.hMm / 2 - iconSize / 2}
+          scaleX={iconScale}
+          scaleY={iconScale}
+          opacity={style.iconOpacity}
+          listening={false}
+        >
+          {(ICON_PATHS[itemType.icon] ?? ICON_PATHS.box!)
+            .split(" M")
+            .map((segment, index) => (
+              <Path
+                key={index}
+                data={index === 0 ? segment : `M${segment}`}
+                stroke={style.stroke}
+                strokeWidth={1.6 / iconScale / scale}
+                lineCap="round"
+                lineJoin="round"
+              />
+            ))}
+        </Group>
+      )}
 
       {showText && (
         <Text

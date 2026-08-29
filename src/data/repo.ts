@@ -159,8 +159,8 @@ export const deleteScene = (id: string): SqlStatement => ({
 export const upsertItemType = (itemType: ItemType): SqlStatement => ({
   sql: `INSERT INTO item_types (id, category, name_nl, name_en, icon, shape, placement,
           default_w_mm, default_h_mm, resizable, has_interior, unit_price_cents,
-          target_area_m2, colour)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          target_area_m2, colour, image)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         ON CONFLICT(id) DO UPDATE SET
           category = excluded.category,
           name_nl = excluded.name_nl,
@@ -174,7 +174,8 @@ export const upsertItemType = (itemType: ItemType): SqlStatement => ({
           has_interior = excluded.has_interior,
           unit_price_cents = excluded.unit_price_cents,
           target_area_m2 = excluded.target_area_m2,
-          colour = excluded.colour`,
+          colour = excluded.colour,
+          image = excluded.image`,
   params: [
     itemType.id,
     itemType.category,
@@ -190,6 +191,7 @@ export const upsertItemType = (itemType: ItemType): SqlStatement => ({
     itemType.unitPriceCents,
     itemType.targetAreaM2,
     itemType.colour,
+    itemType.image,
   ],
 });
 
