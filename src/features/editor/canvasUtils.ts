@@ -101,23 +101,34 @@ export function statusLabelColour(status: Status): string {
   return STATUS_COLOUR[status];
 }
 
-/** Ruler ticks in model space that are visible in the viewport. */
+export interface RulerTick {
+  /** Offset along the ruler in screen pixels. */
+  positionPx: number;
+  metre: number;
+  /** Major ticks carry a metre label; minor ticks are bare. */
+  major: boolean;
+}
+
+/**
+ * Ticks for the part of an axis that is currently on screen, spaced with the
+ * same steps as the grid so ruler and grid never disagree.
+ */
 export function rulerTicks(
   view: ViewTransform,
   lengthPx: number,
   axis: "x" | "y",
-): { positionPx: number; metre: number; major: boolean }[] {
-  const { major } = gridStepMm(view.scale);
-  const step = major;
+): RulerTick[] {
+  if (!(view.scale > 0) || lengthPx <= 0) return [];
+  const { minor, major } = gridStepMm(view.scale);
   const origin = axis === "x" ? view.x : view.y;
-  const startMm = Math.floor(-origin / view.scale / step) * step;
-  const endMm = (lengthPx - origin) / view.scale;
-  const ticks: { positionPx: number; metre: number; major: boolean }[] = [];
-  for (let mm = startMm; mm <= endMm; mm += step) {
+  const firstMm = Math.floor(-origin / view.scale / minor) * minor;
+  const lastMm = (lengthPx - origin) / view.scale;
+  const ticks: RulerTick[] = [];
+  for (let mm = firstMm; mm <= lastMm; mm += minor) {
     ticks.push({
       positionPx: mm * view.scale + origin,
-      metre: Math.round(mm / MM_PER_M),
-      major: true,
+      metre: mm / MM_PER_M,
+      major: mm % major === 0,
     });
   }
   return ticks;

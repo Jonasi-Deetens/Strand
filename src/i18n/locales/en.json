@@ -97,6 +97,8 @@
     "noSelectionHint": "Pick an object on the plan, or place something from the catalogue.",
     "selectionCount": "{{count}} selected",
     "grid": "Grid",
+    "rulers": "Rulers in metres",
+    "rulersShort": "Ruler",
     "snap": "Snapping",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",

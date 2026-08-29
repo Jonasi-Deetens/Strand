@@ -28,6 +28,8 @@ export function EditorToolbar({
   const setColourMode = useEditorStore((state) => state.setColourMode);
   const showGrid = useEditorStore((state) => state.showGrid);
   const toggleGrid = useEditorStore((state) => state.toggleGrid);
+  const showRulers = useEditorStore((state) => state.showRulers);
+  const toggleRulers = useEditorStore((state) => state.toggleRulers);
   const showLabels = useEditorStore((state) => state.showLabels);
   const toggleLabels = useEditorStore((state) => state.toggleLabels);
   const snapEnabled = useEditorStore((state) => state.snapEnabled);
@@ -152,6 +154,15 @@ export function EditorToolbar({
               onClick={toggleGrid}
             >
               <Icon name="grid" size={16} />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              active={showRulers}
+              title={t("editor.rulers")}
+              onClick={toggleRulers}
+            >
+              {t("editor.rulersShort")}
             </Button>
             <Button
               size="icon"

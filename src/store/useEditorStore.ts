@@ -40,6 +40,7 @@ interface EditorState {
   paletteDrag: PaletteDrag | null;
   colourMode: ColourMode;
   showGrid: boolean;
+  showRulers: boolean;
   showLabels: boolean;
   snapEnabled: boolean;
   hiddenCategories: Category[];
@@ -59,6 +60,7 @@ interface EditorState {
   setPaletteDrag: (drag: PaletteDrag | null) => void;
   setColourMode: (mode: ColourMode) => void;
   toggleGrid: () => void;
+  toggleRulers: () => void;
   toggleLabels: () => void;
   toggleSnap: () => void;
   toggleCategoryVisible: (category: Category) => void;
@@ -79,6 +81,7 @@ export const useEditorStore = create<EditorState>()(
       paletteDrag: null,
       colourMode: "status",
       showGrid: true,
+      showRulers: true,
       showLabels: true,
       snapEnabled: true,
       hiddenCategories: [],
@@ -123,6 +126,7 @@ export const useEditorStore = create<EditorState>()(
       setPaletteDrag: (paletteDrag) => set({ paletteDrag }),
       setColourMode: (colourMode) => set({ colourMode }),
       toggleGrid: () => set({ showGrid: !get().showGrid }),
+      toggleRulers: () => set({ showRulers: !get().showRulers }),
       toggleLabels: () => set({ showLabels: !get().showLabels }),
       toggleSnap: () => set({ snapEnabled: !get().snapEnabled }),
       toggleCategoryVisible: (category) => {
@@ -151,6 +155,7 @@ export const useEditorStore = create<EditorState>()(
       partialize: (state) => ({
         colourMode: state.colourMode,
         showGrid: state.showGrid,
+        showRulers: state.showRulers,
         showLabels: state.showLabels,
         snapEnabled: state.snapEnabled,
         hiddenCategories: state.hiddenCategories,

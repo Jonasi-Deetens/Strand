@@ -9,14 +9,17 @@ import {
 import {
   Circle,
   Group,
+  Label,
   Layer,
   Line,
   Rect,
   Stage,
+  Tag,
   Text,
   Transformer,
 } from "react-konva";
 import type Konva from "konva";
+import { STATUS_COLOUR } from "@/domain/status";
 import { type ItemType, type PlanObject, type Scene } from "@/domain/types";
 import {
   arrayPositions,
@@ -28,8 +31,10 @@ import {
 import {
   MM_PER_M,
   SNAP_MM,
+  areaM2,
   clamp,
   formatM,
+  formatM2,
   snapAngle,
   snapMm,
 } from "@/lib/units";
@@ -38,6 +43,7 @@ import { useProjectStore } from "@/store/useProjectStore";
 import { registerStage } from "@/features/export/png";
 import { registerDropTarget } from "./paletteDrag";
 import { fitView, gridStepMm, toModel, zoomAt, type Size } from "./canvasUtils";
+import { CanvasRulers } from "./CanvasRulers";
 import { ObjectShape } from "./ObjectShape";
 import { useCanvasTheme } from "./useCanvasTheme";
 
@@ -77,6 +83,11 @@ export function PlanCanvas({
   const [guides, setGuides] = useState<{ axis: "x" | "y"; lineMm: number }[]>(
     [],
   );
+  const [dragging, setDragging] = useState(false);
+  /** Size under an in-progress resize, so the area readout counts up live. */
+  const [liveSize, setLiveSize] = useState<{ wMm: number; hMm: number } | null>(
+    null,
+  );
 
   const view = useEditorStore((state) => state.view);
   const setView = useEditorStore((state) => state.setView);
@@ -89,6 +100,7 @@ export function PlanCanvas({
   const paletteDrag = useEditorStore((state) => state.paletteDrag);
   const colourMode = useEditorStore((state) => state.colourMode);
   const showGrid = useEditorStore((state) => state.showGrid);
+  const showRulers = useEditorStore((state) => state.showRulers);
   const showLabels = useEditorStore((state) => state.showLabels);
   const snapEnabled = useEditorStore((state) => state.snapEnabled);
   const hiddenCategories = useEditorStore((state) => state.hiddenCategories);
@@ -203,6 +215,7 @@ export function PlanCanvas({
   const handleDragStart = useCallback(
     (id: string) => {
       beginInteraction();
+      setDragging(true);
       const object = objects.find((candidate) => candidate.id === id);
       if (object) dragOriginRef.current = { id, xMm: object.xMm, yMm: object.yMm };
       if (!selection.includes(id)) setSelection([id]);
@@ -278,6 +291,7 @@ export function PlanCanvas({
     const origin = dragOriginRef.current;
     dragOriginRef.current = null;
     setGuides([]);
+    setDragging(false);
     if (!origin) return;
 
     const patches: { id: string; xMm: number; yMm: number }[] = [];
@@ -300,10 +314,23 @@ export function PlanCanvas({
     endInteraction();
   }, [endInteraction, objects, updateObject]);
 
+  /** Feeds the area readout while a resize handle is being dragged. */
+  const handleTransform = useCallback(() => {
+    const id = selection[0];
+    const node = id ? nodesRef.current.get(id) : undefined;
+    const object = objects.find((candidate) => candidate.id === id);
+    if (!node || !object) return;
+    setLiveSize({
+      wMm: Math.max(SNAP_MM * 2, snap(object.wMm * node.scaleX())),
+      hMm: Math.max(SNAP_MM * 2, snap(object.hMm * node.scaleY())),
+    });
+  }, [objects, selection, snap]);
+
   const handleTransformEnd = useCallback(() => {
     const id = selection[0];
     const node = id ? nodesRef.current.get(id) : undefined;
     const object = objects.find((candidate) => candidate.id === id);
+    setLiveSize(null);
     if (!id || !node || !object) return;
 
     const wMm = Math.max(SNAP_MM * 2, snap(object.wMm * node.scaleX()));
@@ -564,6 +591,30 @@ export function PlanCanvas({
     tool,
   ]);
 
+  /**
+   * Size and area of the single selected object, drawn on the object itself.
+   * Counts up live while a resize handle is dragged, and hides while the object
+   * is moved because the label is anchored to the stored position.
+   */
+  const areaReadout = useMemo(() => {
+    const id = selection.length === 1 ? selection[0] : null;
+    if (dragging || !id) return null;
+    const object = visibleObjects.find((candidate) => candidate.id === id);
+    if (!object) return null;
+    const wMm = liveSize?.wMm ?? object.wMm;
+    const hMm = liveSize?.hMm ?? object.hMm;
+    const area = areaM2(wMm, hMm);
+    const target = itemTypes.get(object.itemTypeId)?.targetAreaM2 ?? null;
+    return {
+      xMm: object.xMm,
+      yMm: object.yMm,
+      text: `${formatM(wMm)} × ${formatM(hMm)} · ${formatM2(area)}${
+        target === null ? "" : ` / ${formatM2(target)}`
+      }`,
+      onTarget: target === null || Math.abs(area - target) < 0.5,
+    };
+  }, [dragging, itemTypes, liveSize, selection, visibleObjects]);
+
   const measureLength =
     measure &&
     Math.hypot(
@@ -775,6 +826,29 @@ export function PlanCanvas({
               </>
             )}
 
+            {areaReadout && (
+              <Label
+                x={areaReadout.xMm}
+                y={areaReadout.yMm - 26 / view.scale}
+                listening={false}
+              >
+                <Tag
+                  fill={
+                    areaReadout.onTarget
+                      ? colours.accent
+                      : STATUS_COLOUR.offerte_aangevraagd
+                  }
+                  cornerRadius={3 / view.scale}
+                />
+                <Text
+                  text={areaReadout.text}
+                  fontSize={12 / view.scale}
+                  fontStyle="600"
+                  fill="#ffffff"
+                  padding={4 / view.scale}
+                />
+              </Label>
+            )}
           </Group>
 
           {/* Outside the scaled group on purpose: the transformer works in
@@ -792,6 +866,7 @@ export function PlanCanvas({
             borderStroke={colours.accent}
             borderStrokeWidth={1.4}
             rotateAnchorOffset={26}
+            onTransform={handleTransform}
             onTransformEnd={handleTransformEnd}
             boundBoxFunc={(_oldBox, newBox) => ({
               ...newBox,
@@ -801,6 +876,10 @@ export function PlanCanvas({
           />
         </Layer>
       </Stage>
+
+      {showRulers && (
+        <CanvasRulers view={view} size={size} pointerMm={pointerMm} />
+      )}
 
       {pointerMm && (
         <div className="pointer-events-none absolute right-3 bottom-3 rounded-md bg-[var(--surface-raised)]/90 px-2 py-1 font-mono text-[11px] text-[var(--text-muted)] shadow-sm">

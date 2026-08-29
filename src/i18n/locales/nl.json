@@ -97,6 +97,8 @@
     "noSelectionHint": "Kies een object op het plan, of plaats iets uit de catalogus.",
     "selectionCount": "{{count}} geselecteerd",
     "grid": "Raster",
+    "rulers": "Meetlatten in meters",
+    "rulersShort": "Lat",
     "snap": "Uitlijnen",
     "zoomIn": "Inzoomen",
     "zoomOut": "Uitzoomen",
