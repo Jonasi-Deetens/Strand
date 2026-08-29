@@ -1,4 +1,4 @@
-import { type Status, STATUSES } from "./types";
+import { type OfferteStatus, type Status, STATUSES } from "./types";
 
 /**
  * The status vocabulary is ordered: a procurement line rolls up to the lowest
@@ -23,6 +23,14 @@ export const STATUS_COLOUR: Record<Status, string> = {
   geleverd: "#14b8a6",
   gebouwd: "#22c55e",
   vervallen: "#6b7280",
+};
+
+/** Quote states borrow the colours of the object statuses they correspond to. */
+export const OFFERTE_STATUS_COLOUR: Record<OfferteStatus, string> = {
+  aangevraagd: STATUS_COLOUR.offerte_aangevraagd,
+  ontvangen: STATUS_COLOUR.offerte_ontvangen,
+  gekozen: STATUS_COLOUR.gebouwd,
+  afgewezen: STATUS_COLOUR.vervallen,
 };
 
 /** Statuses that mean "we actually have it on the beach". */

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Icon } from "@/components/Icon";
 import {
   Badge,
@@ -12,8 +13,15 @@ import {
 } from "@/components/ui";
 import { STATUSES, type ItemType, type PlanObject, type Scene, type Status } from "@/domain/types";
 import { itemTypeName } from "@/domain/naming";
-import { STATUS_COLOUR } from "@/domain/status";
-import { areaM2, formatM2, mmToM, parseMetresInput } from "@/lib/units";
+import { OFFERTE_STATUS_COLOUR, STATUS_COLOUR } from "@/domain/status";
+import {
+  areaM2,
+  formatM2,
+  mmToM,
+  parseMetresInput,
+  snapAngle,
+  snapMm,
+} from "@/lib/units";
 import { formatCents } from "@/lib/money";
 import { useLanguage, useT } from "@/i18n/useT";
 import { useEditorStore } from "@/store/useEditorStore";
@@ -42,6 +50,7 @@ export function Inspector({
   const lang = useLanguage();
   const doc = useProjectStore((state) => state.doc);
   const selection = useEditorStore((state) => state.selection);
+  const snapEnabled = useEditorStore((state) => state.snapEnabled);
   const updateObject = useProjectStore((state) => state.updateObject);
   const updateObjects = useProjectStore((state) => state.updateObjects);
   const removeObjects = useProjectStore((state) => state.removeObjects);
@@ -146,10 +155,19 @@ export function Inspector({
 
   const line = lineById(doc, object.procurementLineId);
   const quote = line ? bestQuoteForLine(doc, line.id) : null;
+  const supplier = quote
+    ? (doc.suppliers.find(
+        (candidate) => candidate.id === quote.offerte.supplierId,
+      ) ?? null)
+    : null;
   const siblings = line ? objectsForLine(doc, line.id) : [];
   const area = areaM2(object.wMm, object.hMm);
   const target = itemType.targetAreaM2;
   const areaDelta = target ? area - target : 0;
+
+  // The canvas snaps to 5 cm and 15°, so typed values follow the same grid and
+  // the two ways of editing an object cannot drift apart.
+  const toGrid = (mm: number) => (snapEnabled ? snapMm(mm) : mm);
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -218,7 +236,7 @@ export function Inspector({
               key={`w-${object.id}-${object.wMm}`}
               onBlur={(event) => {
                 const mm = parseMetresInput(event.target.value);
-                if (mm && mm > 0) updateObject(object.id, { wMm: mm });
+                if (mm && mm > 0) updateObject(object.id, { wMm: toGrid(mm) });
               }}
             />
           </Field>
@@ -231,7 +249,7 @@ export function Inspector({
               key={`h-${object.id}-${object.hMm}`}
               onBlur={(event) => {
                 const mm = parseMetresInput(event.target.value);
-                if (mm && mm > 0) updateObject(object.id, { hMm: mm });
+                if (mm && mm > 0) updateObject(object.id, { hMm: toGrid(mm) });
               }}
             />
           </Field>
@@ -243,7 +261,7 @@ export function Inspector({
               defaultValue={mmToM(object.xMm).toFixed(2)}
               onBlur={(event) => {
                 const mm = parseMetresInput(event.target.value);
-                if (mm !== null) updateObject(object.id, { xMm: mm });
+                if (mm !== null) updateObject(object.id, { xMm: toGrid(mm) });
               }}
             />
           </Field>
@@ -255,7 +273,7 @@ export function Inspector({
               defaultValue={mmToM(object.yMm).toFixed(2)}
               onBlur={(event) => {
                 const mm = parseMetresInput(event.target.value);
-                if (mm !== null) updateObject(object.id, { yMm: mm });
+                if (mm !== null) updateObject(object.id, { yMm: toGrid(mm) });
               }}
             />
           </Field>
@@ -267,6 +285,12 @@ export function Inspector({
               onChange={(event) =>
                 updateObject(object.id, {
                   rotationDeg: Number(event.target.value) || 0,
+                })
+              }
+              onBlur={() =>
+                snapEnabled &&
+                updateObject(object.id, {
+                  rotationDeg: snapAngle(object.rotationDeg),
                 })
               }
             />
@@ -281,6 +305,21 @@ export function Inspector({
             />
           </Field>
         </div>
+
+        {/* Variant splits one item type into separate procurement lines, so
+            "cabine, dubbel" is quoted apart from "cabine". */}
+        <Field label={t("common.variant")} hint={t("editor.variantHint")}>
+          <Input
+            key={`v-${object.id}`}
+            defaultValue={object.variant ?? ""}
+            placeholder={t("editor.variantPlaceholder")}
+            onBlur={(event) => {
+              const variant = event.target.value.trim();
+              if ((object.variant ?? "") === variant) return;
+              updateObject(object.id, { variant: variant || null });
+            }}
+          />
+        </Field>
 
         <Field label={t("common.notes")}>
           <Textarea
@@ -336,6 +375,10 @@ export function Inspector({
               </div>
               <ProgressBar value={lineCompletion(doc, line)} />
               <dl className="mt-2 grid grid-cols-2 gap-1 text-[11px]">
+                <dt className="muted">{t("common.unitPrice")}</dt>
+                <dd className="text-right tabular-nums">
+                  {formatCents(itemType.unitPriceCents, currency)}
+                </dd>
                 <dt className="muted">{t("procurement.budget")}</dt>
                 <dd className="text-right tabular-nums">
                   {formatCents(line.budgetCents, currency)}
@@ -347,6 +390,29 @@ export function Inspector({
                     : t("procurement.noQuote")}
                 </dd>
               </dl>
+
+              {quote && (
+                <div className="mt-2 border-t border-subtle pt-2">
+                  <p className="muted text-[10px] tracking-wide uppercase">
+                    {t("editor.linkedOfferte")}
+                  </p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="min-w-0 truncate text-[11px]">
+                      {quote.offerte.reference}
+                      {supplier ? ` · ${supplier.name}` : ""}
+                    </p>
+                    <Badge colour={OFFERTE_STATUS_COLOUR[quote.offerte.status]}>
+                      {t(`offerteStatus.${quote.offerte.status}`)}
+                    </Badge>
+                  </div>
+                  <Link
+                    to={`/offertes?offerte=${quote.offerte.id}`}
+                    className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-sea-700 hover:underline dark:text-sea-300"
+                  >
+                    <Icon name="euro" size={13} /> {t("editor.openOfferte")}
+                  </Link>
+                </div>
+              )}
             </div>
           </>
         )}

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import clsx from "clsx";
 import { Icon } from "@/components/Icon";
 import {
@@ -17,7 +18,7 @@ import {
   type OfferteStatus,
   type ProcurementLine,
 } from "@/domain/types";
-import { STATUS_COLOUR } from "@/domain/status";
+import { OFFERTE_STATUS_COLOUR, STATUS_COLOUR } from "@/domain/status";
 import {
   DEFAULT_VAT_PCT,
   formatCents,
@@ -38,19 +39,20 @@ const OFFERTE_STATUSES: OfferteStatus[] = [
   "afgewezen",
 ];
 
-const OFFERTE_STATUS_COLOUR: Record<OfferteStatus, string> = {
-  aangevraagd: STATUS_COLOUR.offerte_aangevraagd,
-  ontvangen: STATUS_COLOUR.offerte_ontvangen,
-  gekozen: STATUS_COLOUR.gebouwd,
-  afgewezen: STATUS_COLOUR.vervallen,
-};
-
 export function OffertesPage() {
   const t = useT();
   const doc = useProjectStore((state) => state.doc)!;
   const addOfferte = useProjectStore((state) => state.addOfferte);
   const [tab, setTab] = useState<"quotes" | "compare" | "suppliers">("quotes");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Selection lives in the query string so the plan inspector can link straight
+  // to the quote behind an object.
+  const [params, setParams] = useSearchParams();
+  const selectedId = params.get("offerte");
+  const setSelectedId = useCallback(
+    (id: string) => setParams({ offerte: id }, { replace: true }),
+    [setParams],
+  );
 
   // Fall back to the first quote rather than showing an empty pane: the id can
   // go stale when a quote is deleted, and it starts out null when the first
