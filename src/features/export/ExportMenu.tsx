@@ -78,7 +78,7 @@ export function ExportMenu() {
             qty: t("common.qty"),
             status: t("common.status"),
             budget: t("procurement.budget"),
-            quoted: t("dashboard.quoted"),
+            quoted: t("procurement.bestQuote"),
             total: t("common.total"),
             plot: t("editor.plot"),
             sheet: t("exporting.sheet"),

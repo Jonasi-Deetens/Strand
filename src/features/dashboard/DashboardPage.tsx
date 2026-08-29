@@ -63,7 +63,7 @@ export function DashboardPage() {
             sub={`${totals.lineCount} ${t("procurement.lines").toLowerCase()}`}
           />
           <Stat
-            label={t("dashboard.quoted")}
+            label={t("dashboard.expected")}
             value={formatCents(totals.expectedCents, currency)}
             sub={
               totals.potentialSavingCents > 0

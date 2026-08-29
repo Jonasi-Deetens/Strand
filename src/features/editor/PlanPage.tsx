@@ -148,10 +148,10 @@ export function PlanPage() {
           onZoom={handleZoom}
           onZoomFit={handleZoomFit}
           trailing={
-            <>
+            <div className="flex items-center gap-2">
               <ExportMenu />
               <ShortcutsHelp />
-            </>
+            </div>
           }
         />
         <div

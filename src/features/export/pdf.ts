@@ -425,10 +425,10 @@ function drawSchedule(
       );
       quotedTotal += quote.exVatCents;
     } else {
-      // No quote yet: the budget stands in, marked so the reader sees why.
+      // Nothing quoted yet, so the column stays empty rather than repeating
+      // the budget; the total then reads as "quoted so far".
       pdf.setTextColor(150);
       pdf.text("–", columns[4]!.x, y, { align: "right" });
-      quotedTotal += line.budgetCents;
     }
     budgetTotal += line.budgetCents;
     y += 6;

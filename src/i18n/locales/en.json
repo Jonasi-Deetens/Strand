@@ -161,7 +161,7 @@
     "title": "Overview",
     "subtitle": "What is left to do and what it costs",
     "budget": "Budgeted",
-    "quoted": "Quoted",
+    "expected": "Expected",
     "committed": "Committed",
     "openLines": "Open items",
     "progress": "Progress",
