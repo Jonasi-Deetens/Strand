@@ -1,0 +1,47 @@
+-- Default catalogus for a Dutch beach bar. Prices are indicative starting
+-- points in cents; they are editable in the app and never overwritten because
+-- this seed uses INSERT OR IGNORE on stable ids.
+
+INSERT OR IGNORE INTO item_types
+  (id, category, name_nl, name_en, icon, shape, placement, default_w_mm, default_h_mm,
+   resizable, has_interior, unit_price_cents, target_area_m2, colour)
+VALUES
+  ('it_bar',          'gebouw',    'Strandbar',            'Beach bar',          'bar',        'rect',   'beach',    12000, 5000, 1, 1, 7500000, 60,   '#b58f57'),
+  ('it_toilet',       'gebouw',    'Toiletgebouw',         'Toilet building',    'toilet',     'rect',   'beach',     6000, 3000, 1, 1, 2800000, 18,   '#96723f'),
+  ('it_berging',      'gebouw',    'Berging',              'Storage shed',       'shed',       'rect',   'beach',     4000, 3000, 1, 1,  650000, NULL, '#745734'),
+  ('it_terras',       'terrein',   'Vlonderterras',        'Deck terrace',       'deck',       'rect',   'beach',    14000, 8000, 1, 0, 1500000, NULL, '#c7a877'),
+  ('it_pad',          'terrein',   'Vlonderpad',           'Boardwalk',          'path',       'rect',   'beach',    12000, 1500, 1, 0,  250000, NULL, '#d9c5a0'),
+  ('it_cabine',       'cabine',    'Strandcabine',         'Beach cabin',        'cabin',      'rect',   'beach',     2000, 2000, 1, 0,  145000, NULL, '#43b6ba'),
+  ('it_ligbed',       'meubilair', 'Ligbed',               'Sunbed',             'sunbed',     'rect',   'beach',     2000,  800, 0, 0,   22000, NULL, '#74d1d3'),
+  ('it_loungebank',   'meubilair', 'Loungebank',           'Lounge bench',       'sofa',       'rect',   'beach',     2200,  900, 1, 0,  135000, NULL, '#2a999f'),
+  ('it_loungestoel',  'meubilair', 'Loungestoel',          'Lounge chair',       'armchair',   'rect',   'beach',      900,  900, 0, 0,   65000, NULL, '#227b84'),
+  ('it_tafel',        'meubilair', 'Tafel',                'Table',              'table',      'rect',   'both',      1200,  800, 1, 0,   30000, NULL, '#20626b'),
+  ('it_statafel',     'meubilair', 'Statafel',             'Standing table',     'hightable',  'circle', 'both',       800,  800, 0, 0,   25000, NULL, '#1f4f57'),
+  ('it_stoel',        'meubilair', 'Stoel',                'Chair',              'chair',      'rect',   'both',       500,  500, 0, 0,    8000, NULL, '#1d4249'),
+  ('it_parasol',      'parasol',   'Parasol',              'Umbrella',           'umbrella',   'circle', 'beach',     3000, 3000, 1, 0,   45000, NULL, '#f59e0b'),
+  ('it_parasol_xl',   'parasol',   'Parasol XL',           'Umbrella XL',        'umbrella',   'circle', 'beach',     4500, 4500, 1, 0,   90000, NULL, '#d97706'),
+  ('it_windscherm',   'terrein',   'Windscherm',           'Windbreak',          'windscreen', 'rect',   'beach',     4000,  200, 1, 0,   35000, NULL, '#8b5cf6'),
+  ('it_hek',          'terrein',   'Hekwerk',              'Fence',              'fence',      'rect',   'beach',     5000,  150, 1, 0,   40000, NULL, '#6d28d9'),
+  ('it_douche',       'techniek',  'Buitendouche',         'Outdoor shower',     'shower',     'rect',   'beach',     1000, 1000, 0, 0,   90000, NULL, '#0ea5e9'),
+  ('it_watertank',    'techniek',  'Watertank',            'Water tank',         'water',      'rect',   'beach',     2000, 1500, 1, 0,  180000, NULL, '#0284c7'),
+  ('it_aggregaat',    'techniek',  'Aggregaat / techniek', 'Generator',          'generator',  'rect',   'beach',     1500, 1000, 1, 0,  350000, NULL, '#475569'),
+  ('it_koelcontainer','techniek',  'Koelcontainer',        'Cold container',     'container',  'rect',   'beach',     2500, 2000, 1, 0,  550000, NULL, '#334155'),
+  ('it_afvalbak',     'terrein',   'Afvalbak',             'Waste bin',          'bin',        'rect',   'beach',      600,  600, 0, 0,   12000, NULL, '#64748b'),
+  ('it_vlaggenmast',  'terrein',   'Vlaggenmast',          'Flag pole',          'flag',       'circle', 'beach',      400,  400, 0, 0,   25000, NULL, '#e11d48'),
+  ('it_dj',           'techniek',  'DJ-booth',             'DJ booth',           'dj',         'rect',   'beach',     2000, 1500, 1, 0,  200000, NULL, '#7c3aed'),
+  ('it_volleybal',    'terrein',   'Beachvolleybalveld',   'Volleyball court',   'volleyball', 'rect',   'beach',    18000, 9000, 1, 0,  250000, NULL, '#f97316'),
+  ('it_plantenbak',   'groen',     'Plantenbak / duingras','Planter',            'plant',      'rect',   'beach',     1200,  600, 1, 0,   15000, NULL, '#16a34a'),
+  ('it_speeltoestel', 'terrein',   'Speeltoestel',         'Play equipment',     'playground', 'rect',   'beach',     4000, 4000, 1, 0,  450000, NULL, '#22c55e'),
+  ('it_toog',         'interieur', 'Bartoog',              'Bar counter',        'counter',    'rect',   'interior',  4000,  700, 1, 0,  850000, NULL, '#b58f57'),
+  ('it_tap',          'interieur', 'Tapinstallatie',       'Draft system',       'tap',        'rect',   'interior',  1200,  600, 0, 0,  250000, NULL, '#96723f'),
+  ('it_koeling',      'interieur', 'Koeling',              'Fridge',             'fridge',     'rect',   'interior',   700,  700, 0, 0,  120000, NULL, '#0ea5e9'),
+  ('it_keukenblok',   'interieur', 'Keukenblok',           'Kitchen block',      'kitchen',    'rect',   'interior',  2000,  700, 1, 0,  350000, NULL, '#0284c7'),
+  ('it_werkbank',     'interieur', 'Werkbank',             'Work bench',         'workbench',  'rect',   'interior',  2000,  700, 1, 0,   95000, NULL, '#64748b'),
+  ('it_vaatwasser',   'interieur', 'Vaatwasser',           'Dishwasher',         'dishwasher', 'rect',   'interior',   600,  600, 0, 0,  180000, NULL, '#475569'),
+  ('it_kassa',        'interieur', 'Kassasysteem',         'POS register',       'register',   'rect',   'interior',   400,  400, 0, 0,  150000, NULL, '#7c3aed'),
+  ('it_stelling',     'interieur', 'Voorraadstelling',     'Storage shelving',   'shelf',      'rect',   'interior',  2000,  600, 1, 0,   40000, NULL, '#745734'),
+  ('it_wc',           'interieur', 'Toiletpot',            'Toilet',             'wc',         'rect',   'interior',   600,  800, 0, 0,   45000, NULL, '#43b6ba'),
+  ('it_urinoir',      'interieur', 'Urinoir',              'Urinal',             'urinal',     'rect',   'interior',   400,  350, 0, 0,   30000, NULL, '#2a999f'),
+  ('it_wastafel',     'interieur', 'Wastafel',             'Wash basin',         'sink',       'rect',   'interior',   600,  450, 0, 0,   25000, NULL, '#227b84'),
+  ('it_binnenwand',   'interieur', 'Binnenwand',           'Partition wall',     'wall',       'rect',   'interior',  3000,  100, 1, 0,   60000, NULL, '#94a3b8'),
+  ('it_deur',         'interieur', 'Deur',                 'Door',               'door',       'rect',   'interior',   900,  120, 1, 0,   45000, NULL, '#a1a1aa');

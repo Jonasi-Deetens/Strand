@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Coastal palette: sand, sea, driftwood */
+  --color-sand-50: #fbf8f2;
+  --color-sand-100: #f4ede0;
+  --color-sand-200: #e8dbc4;
+  --color-sand-300: #d9c5a0;
+  --color-sand-400: #c7a877;
+  --color-sand-500: #b58f57;
+  --color-sand-600: #96723f;
+  --color-sand-700: #745734;
+  --color-sand-800: #4c3a26;
+  --color-sand-900: #2b2117;
+  --color-sand-950: #1a140e;
+
+  --color-sea-50: #eefaf9;
+  --color-sea-100: #d3f2f1;
+  --color-sea-200: #a9e5e5;
+  --color-sea-300: #74d1d3;
+  --color-sea-400: #43b6ba;
+  --color-sea-500: #2a999f;
+  --color-sea-600: #227b84;
+  --color-sea-700: #20626b;
+  --color-sea-800: #1f4f57;
+  --color-sea-900: #1d4249;
+  --color-sea-950: #0c2429;
+
+  --color-ink-50: #f6f7f8;
+  --color-ink-100: #eceef0;
+  --color-ink-200: #d5dade;
+  --color-ink-300: #b0b9c1;
+  --color-ink-400: #84919d;
+  --color-ink-500: #667382;
+  --color-ink-600: #515c69;
+  --color-ink-700: #434b56;
+  --color-ink-800: #262c34;
+  --color-ink-900: #1a1f25;
+  --color-ink-950: #10141a;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --surface: var(--color-sand-50);
+    --surface-raised: #ffffff;
+    --surface-sunken: var(--color-sand-100);
+    --border-subtle: var(--color-sand-200);
+    --text-strong: var(--color-ink-900);
+    --text-muted: var(--color-ink-500);
+    --canvas-bg: #f7f0e0;
+    --canvas-grid: #ded0b4;
+    --canvas-grid-major: #c9b48d;
+    --canvas-plot: #fdf8ec;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --surface: var(--color-ink-950);
+    --surface-raised: var(--color-ink-900);
+    --surface-sunken: #0b0e12;
+    --border-subtle: #2a323c;
+    --text-strong: var(--color-ink-100);
+    --text-muted: var(--color-ink-400);
+    --canvas-bg: #131a20;
+    --canvas-grid: #223039;
+    --canvas-grid-major: #33454f;
+    --canvas-plot: #18222a;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--text-strong);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-subtle);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@utility surface {
+  background: var(--surface-raised);
+}
+
+@utility panel {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+}
+
+@utility muted {
+  color: var(--text-muted);
+}
+
+@utility border-subtle {
+  border-color: var(--border-subtle);
+}
