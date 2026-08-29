@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { Button, DropdownMenu, DropdownMenuItem } from "@/components/ui";
+import { Button, DropdownMenu, DropdownMenuItem, Toast } from "@/components/ui";
 import { type Status } from "@/domain/types";
 import { saveBinaryFile, saveTextFile } from "@/lib/files";
 import { useLanguage, useT } from "@/i18n/useT";
@@ -121,11 +121,7 @@ export function ExportMenu() {
         ))}
       </DropdownMenu>
 
-      {message && (
-        <div className="panel absolute right-0 z-30 mt-1 w-72 p-2.5 text-[11px] shadow-xl">
-          {message}
-        </div>
-      )}
+      {message && <Toast>{message}</Toast>}
     </div>
   );
 }

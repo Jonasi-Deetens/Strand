@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Menu from "@radix-ui/react-dropdown-menu";
+import { createPortal } from "react-dom";
 import {
   useRef,
   type ButtonHTMLAttributes,
@@ -333,6 +334,24 @@ export function DropdownMenu({
         </Menu.Content>
       </Menu.Portal>
     </Menu.Root>
+  );
+}
+
+/**
+ * Transient confirmation. Rendered into `body` at a fixed position: an
+ * absolutely positioned box inside the editor toolbar gets covered by the
+ * canvas that follows it, so the message never actually reached the screen.
+ */
+export function Toast({ children }: { children: ReactNode }) {
+  return createPortal(
+    <div
+      role="status"
+      aria-live="polite"
+      className="panel fixed right-4 bottom-4 z-[60] max-w-sm px-3 py-2.5 text-xs shadow-xl"
+    >
+      {children}
+    </div>,
+    document.body,
   );
 }
 
