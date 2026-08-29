@@ -5,7 +5,6 @@ import { ICON_PATHS } from "@/components/Icon";
 import { type ItemType, type PlanObject } from "@/domain/types";
 import { objectStyle } from "./canvasUtils";
 import { type ColourMode } from "@/store/useEditorStore";
-import { formatDims } from "@/lib/units";
 
 interface ObjectShapeProps {
   object: PlanObject;
@@ -14,6 +13,8 @@ interface ObjectShapeProps {
   selected: boolean;
   scale: number;
   showLabel: boolean;
+  /** What to write on the shape: the object's own label, or its type name. */
+  label: string;
   draggable: boolean;
   /** False for the place, array and measure tools, which own every click. */
   selectable: boolean;
@@ -39,6 +40,7 @@ export const ObjectShape = memo(function ObjectShape({
   selected,
   scale,
   showLabel,
+  label,
   draggable,
   selectable,
   interiorCount,
@@ -133,7 +135,7 @@ export const ObjectShape = memo(function ObjectShape({
           x={6 / scale}
           y={6 / scale}
           width={object.wMm - 12 / scale}
-          text={object.label ?? formatDims(object.wMm, object.hMm)}
+          text={label}
           fontSize={labelSize}
           fontStyle="500"
           fill={style.stroke}

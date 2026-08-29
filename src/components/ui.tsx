@@ -2,6 +2,7 @@ import clsx from "clsx";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import {
+  useRef,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
@@ -255,11 +256,25 @@ export function Modal({
   footer?: ReactNode;
   width?: string;
 }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+
   return (
     <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content
+          ref={contentRef}
+          // These dialogs are all forms, so start in the first field instead of
+          // on the close button that Radix would pick.
+          onOpenAutoFocus={(event) => {
+            const field = contentRef.current?.querySelector<HTMLElement>(
+              "input, select, textarea",
+            );
+            if (!field) return;
+            event.preventDefault();
+            field.focus();
+          }}
+          aria-describedby={undefined}
           className={clsx(
             "panel fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col shadow-2xl",
             width,
@@ -331,7 +346,7 @@ export function DropdownMenuItem({
   return (
     <Menu.Item
       onSelect={onSelect}
-      className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs outline-none select-none data-highlighted:bg-sea-500/10"
+      className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs outline-none select-none data-highlighted:bg-sea-500/20 data-highlighted:text-sea-700 dark:data-highlighted:text-sea-100"
     >
       {children}
     </Menu.Item>

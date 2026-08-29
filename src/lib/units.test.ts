@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   areaM2,
   formatDims,
+  formatM,
+  formatM2,
   mToMm,
   mmToM,
   parseMetresInput,
@@ -41,5 +43,13 @@ describe("unit conversion", () => {
 
   it("formats dimensions without trailing zeroes", () => {
     expect(formatDims(12000, 5000)).toBe("12 m × 5 m");
+  });
+
+  it("writes decimals the Dutch way, like the money and DXF output", () => {
+    expect(formatM(7700)).toBe("7,7 m");
+    expect(formatM(6050)).toBe("6,05 m");
+    expect(formatM2(130.94)).toBe("130,9 m²");
+    // A whole area keeps its decimal so a column of figures lines up.
+    expect(formatM2(60)).toBe("60,0 m²");
   });
 });

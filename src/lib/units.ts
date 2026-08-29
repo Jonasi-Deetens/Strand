@@ -29,12 +29,24 @@ export function areaM2(wMm: Mm, hMm: Mm): number {
   return (wMm / MM_PER_M) * (hMm / MM_PER_M);
 }
 
-export function formatM(mm: Mm, digits = 2): string {
-  return `${mmToM(mm).toFixed(digits).replace(/\.?0+$/, "")} m`;
+/**
+ * Lengths and areas read with a comma decimal, matching the money helpers and
+ * the dimension text in the DXF export. Trailing zeroes are dropped from a
+ * length, so a whole metre reads "6 m" rather than "6,00 m".
+ */
+export function formatM(mm: Mm, digits = 2, locale = "nl-NL"): string {
+  const value = new Intl.NumberFormat(locale, {
+    maximumFractionDigits: digits,
+  }).format(mmToM(mm));
+  return `${value} m`;
 }
 
-export function formatM2(m2: number, digits = 1): string {
-  return `${m2.toFixed(digits)} m²`;
+export function formatM2(m2: number, digits = 1, locale = "nl-NL"): string {
+  const value = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(m2);
+  return `${value} m²`;
 }
 
 export function formatDims(wMm: Mm, hMm: Mm): string {

@@ -20,6 +20,7 @@ import {
 } from "react-konva";
 import type Konva from "konva";
 import { STATUS_COLOUR } from "@/domain/status";
+import { itemTypeName } from "@/domain/naming";
 import { type ItemType, type PlanObject, type Scene } from "@/domain/types";
 import {
   arrayPositions,
@@ -38,6 +39,7 @@ import {
   snapAngle,
   snapMm,
 } from "@/lib/units";
+import { useLanguage } from "@/i18n/useT";
 import { useEditorStore } from "@/store/useEditorStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { registerStage } from "@/features/export/png";
@@ -98,6 +100,7 @@ export function PlanCanvas({
   const setTool = useEditorStore((state) => state.setTool);
   const placingItemTypeId = useEditorStore((state) => state.placingItemTypeId);
   const paletteDrag = useEditorStore((state) => state.paletteDrag);
+  const lang = useLanguage();
   const colourMode = useEditorStore((state) => state.colourMode);
   const showGrid = useEditorStore((state) => state.showGrid);
   const showRulers = useEditorStore((state) => state.showRulers);
@@ -728,6 +731,7 @@ export function PlanCanvas({
                   selected={selection.includes(object.id)}
                   scale={view.scale}
                   showLabel={showLabels}
+                  label={object.label ?? itemTypeName(itemType, lang)}
                   interiorCount={interiorCounts.get(object.id) ?? 0}
                   selectable={tool === "select"}
                   draggable={
@@ -829,7 +833,9 @@ export function PlanCanvas({
             {areaReadout && (
               <Label
                 x={areaReadout.xMm}
-                y={areaReadout.yMm - 26 / view.scale}
+                // Clear of both the resize handles on the top edge and the
+                // rotate anchor that floats 26 px above them.
+                y={areaReadout.yMm - 56 / view.scale}
                 listening={false}
               >
                 <Tag
