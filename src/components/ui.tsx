@@ -1,7 +1,7 @@
 import clsx from "clsx";
+import * as Dialog from "@radix-ui/react-dialog";
+import * as Menu from "@radix-ui/react-dropdown-menu";
 import {
-  useEffect,
-  useRef,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
@@ -236,6 +236,10 @@ export function EmptyState({
   );
 }
 
+/**
+ * Radix owns the hard parts here: focus trap, restoring focus on close, escape
+ * and outside clicks, `aria-modal` and scroll locking.
+ */
 export function Modal({
   open,
   onClose,
@@ -251,50 +255,86 @@ export function Modal({
   footer?: ReactNode;
   width?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    ref.current?.querySelector<HTMLElement>("input, select, textarea")?.focus();
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-        role="presentation"
-      />
-      <div
-        ref={ref}
-        role="dialog"
-        aria-modal="true"
-        className={clsx(
-          "panel relative z-10 flex w-full flex-col shadow-2xl",
-          width,
-        )}
-      >
-        <header className="flex items-center justify-between border-b border-subtle px-4 py-3">
-          <h2 className="text-sm font-semibold">{title}</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="×">
-            ×
-          </Button>
-        </header>
-        <div className="max-h-[70vh] overflow-auto p-4">{children}</div>
-        {footer && (
-          <footer className="flex justify-end gap-2 border-t border-subtle px-4 py-3">
-            {footer}
-          </footer>
-        )}
-      </div>
-    </div>
+    <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
+        <Dialog.Content
+          className={clsx(
+            "panel fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col shadow-2xl",
+            width,
+          )}
+        >
+          <header className="flex items-center justify-between border-b border-subtle px-4 py-3">
+            <Dialog.Title className="text-sm font-semibold">
+              {title}
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <Button variant="ghost" size="icon" aria-label="×">
+                ×
+              </Button>
+            </Dialog.Close>
+          </header>
+          <div className="max-h-[70vh] overflow-auto p-4">{children}</div>
+          {footer && (
+            <footer className="flex justify-end gap-2 border-t border-subtle px-4 py-3">
+              {footer}
+            </footer>
+          )}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+/**
+ * Radix menu with the app's panel styling. `trigger` is rendered as the button
+ * itself, so keyboard navigation and roles come for free.
+ */
+export function DropdownMenu({
+  trigger,
+  children,
+  align = "end",
+  className,
+}: {
+  trigger: ReactNode;
+  children: ReactNode;
+  align?: "start" | "center" | "end";
+  className?: string;
+}) {
+  return (
+    <Menu.Root>
+      <Menu.Trigger asChild>{trigger}</Menu.Trigger>
+      <Menu.Portal>
+        <Menu.Content
+          align={align}
+          sideOffset={4}
+          className={clsx(
+            "panel z-50 min-w-56 overflow-hidden p-1 shadow-xl",
+            className,
+          )}
+        >
+          {children}
+        </Menu.Content>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
+export function DropdownMenuItem({
+  children,
+  onSelect,
+}: {
+  children: ReactNode;
+  onSelect: () => void;
+}) {
+  return (
+    <Menu.Item
+      onSelect={onSelect}
+      className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-left text-xs outline-none select-none data-highlighted:bg-sea-500/10"
+    >
+      {children}
+    </Menu.Item>
   );
 }
 
