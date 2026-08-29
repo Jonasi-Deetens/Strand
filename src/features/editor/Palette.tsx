@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import clsx from "clsx";
-import { Icon } from "@/components/Icon";
 import { Input } from "@/components/ui";
+import { CatalogThumb } from "./CatalogThumb";
 import { CATEGORIES, type Category, type ItemType } from "@/domain/types";
 import { itemTypeName } from "@/domain/naming";
 import { formatDims } from "@/lib/units";
@@ -40,15 +40,7 @@ function PaletteItem({
         active ? "bg-sea-500/20 ring-1 ring-sea-400" : "hover:bg-sea-500/10",
       )}
     >
-      <span
-        className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
-        style={{
-          backgroundColor: `${itemType.colour}1f`,
-          color: itemType.colour,
-        }}
-      >
-        <Icon name={itemType.icon} size={17} />
-      </span>
+      <CatalogThumb itemType={itemType} size={32} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13px] font-medium">
           {itemTypeName(itemType, lang)}
