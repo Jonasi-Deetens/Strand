@@ -131,8 +131,8 @@ Importing replaces the current project.
 
 ## Keyboard
 
-`V` select · `R` array · `M` measure · `G` grid · `S` next status · `L` lock ·
-arrows nudge (Shift for 1 m) · `⌘/Ctrl+D` duplicate · `⌘/Ctrl+Z` undo ·
+`V` select · `R` array · `M` measure · `G` grid · `⇧R` rulers · `S` next status ·
+`L` lock · arrows nudge (Shift for 1 m) · `⌘/Ctrl+D` duplicate · `⌘/Ctrl+Z` undo ·
 `⌘/Ctrl+⇧+Z` redo · `?` shows the full list.
 
 The toolbar also toggles the grid, the rulers, object labels and snapping, and

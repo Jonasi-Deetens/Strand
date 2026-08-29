@@ -100,6 +100,7 @@
     "grid": "Raster",
     "rulers": "Meetlatten in meters",
     "rulersShort": "Lat",
+    "labels": "Objectnamen",
     "variantHint": "Krijgt een eigen post en offerte.",
     "variantPlaceholder": "bijv. dubbel, met slot",
     "linkedOfferte": "Gekoppelde offerte",

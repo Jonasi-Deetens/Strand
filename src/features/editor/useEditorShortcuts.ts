@@ -90,7 +90,9 @@ export function useEditorShortcuts(): void {
           editor.setTool("measure");
           break;
         case "r":
-          editor.setTool("array");
+          // Shift+R is the rulers, following Figma; bare R is the array tool.
+          if (event.shiftKey) editor.toggleRulers();
+          else editor.setTool("array");
           break;
         case "g":
           editor.toggleGrid();

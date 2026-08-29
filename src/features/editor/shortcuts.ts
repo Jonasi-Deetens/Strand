@@ -49,6 +49,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     titleKey: "editor.groupView",
     items: [
       { keys: "G", labelKey: "editor.grid" },
+      { keys: "⇧ + R", labelKey: "editor.rulers" },
       { keysKey: "editor.keySpaceDrag", labelKey: "editor.pan" },
       { keys: "Scroll", labelKey: "editor.zoomWheel" },
       { keysKey: "editor.keyDoubleClick", labelKey: "editor.openInterior" },

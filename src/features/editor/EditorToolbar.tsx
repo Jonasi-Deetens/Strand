@@ -159,7 +159,7 @@ export function EditorToolbar({
               size="sm"
               variant="ghost"
               active={showRulers}
-              title={t("editor.rulers")}
+              title={`${t("editor.rulers")} (⇧R)`}
               onClick={toggleRulers}
             >
               {t("editor.rulersShort")}
@@ -168,7 +168,7 @@ export function EditorToolbar({
               size="icon"
               variant="ghost"
               active={showLabels}
-              title={t("editor.legend")}
+              title={t("editor.labels")}
               onClick={toggleLabels}
             >
               <Icon name="file" size={16} />
