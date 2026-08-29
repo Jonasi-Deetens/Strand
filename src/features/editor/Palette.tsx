@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import clsx from "clsx";
 import { Icon } from "@/components/Icon";
 import { Input } from "@/components/ui";
@@ -8,6 +8,7 @@ import { formatDims } from "@/lib/units";
 import { formatCents } from "@/lib/money";
 import { useLanguage, useT } from "@/i18n/useT";
 import { useEditorStore } from "@/store/useEditorStore";
+import { beginPaletteDrag } from "./paletteDrag";
 
 interface PaletteItemProps {
   itemType: ItemType;
@@ -25,34 +26,21 @@ function PaletteItem({
   onPick,
 }: PaletteItemProps) {
   const lang = useLanguage();
-  const swatchRef = useRef<HTMLSpanElement>(null);
 
   return (
     <button
       type="button"
-      draggable
-      onDragStart={(event) => {
-        // `text/plain` as well, because some webviews hand back only the
-        // standard types on drop.
-        event.dataTransfer.setData("text/strand-item-type", itemType.id);
-        event.dataTransfer.setData("text/plain", itemType.id);
-        event.dataTransfer.effectAllowed = "copy";
-        // Without this the webview drags a snapshot of the whole row, which it
-        // renders far larger than the row itself; the icon tile stays small.
-        const swatch = swatchRef.current;
-        if (swatch) {
-          const box = swatch.getBoundingClientRect();
-          event.dataTransfer.setDragImage(swatch, box.width / 2, box.height / 2);
-        }
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        beginPaletteDrag(itemType.id, event.clientX, event.clientY);
       }}
       onClick={() => onPick(itemType.id)}
       className={clsx(
-        "group flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
+        "group flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors select-none",
         active ? "bg-sea-500/20 ring-1 ring-sea-400" : "hover:bg-sea-500/10",
       )}
     >
       <span
-        ref={swatchRef}
         className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
         style={{
           backgroundColor: `${itemType.colour}1f`,

@@ -36,6 +36,7 @@ import {
 import { useEditorStore } from "@/store/useEditorStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { registerStage } from "@/features/export/png";
+import { registerDropTarget } from "./paletteDrag";
 import { fitView, gridStepMm, toModel, zoomAt, type Size } from "./canvasUtils";
 import { ObjectShape } from "./ObjectShape";
 import { useCanvasTheme } from "./useCanvasTheme";
@@ -85,6 +86,7 @@ export function PlanCanvas({
   const tool = useEditorStore((state) => state.tool);
   const setTool = useEditorStore((state) => state.setTool);
   const placingItemTypeId = useEditorStore((state) => state.placingItemTypeId);
+  const paletteDrag = useEditorStore((state) => state.paletteDrag);
   const colourMode = useEditorStore((state) => state.colourMode);
   const showGrid = useEditorStore((state) => state.showGrid);
   const showLabels = useEditorStore((state) => state.showLabels);
@@ -321,6 +323,62 @@ export function PlanCanvas({
     });
   }, [objects, scene, selection, snap, snapEnabled, updateObject]);
 
+  /**
+   * Top-left corner in model space for an item dropped at a client point, or
+   * null when that point is outside the drawing area.
+   */
+  const dropAnchor = useCallback(
+    (itemTypeId: string, clientX: number, clientY: number) => {
+      const itemType = itemTypes.get(itemTypeId);
+      const bounds = containerRef.current?.getBoundingClientRect();
+      if (!itemType || !bounds) return null;
+      if (
+        clientX < bounds.left ||
+        clientX > bounds.right ||
+        clientY < bounds.top ||
+        clientY > bounds.bottom
+      ) {
+        return null;
+      }
+      const model = toModel(
+        { x: clientX - bounds.left, y: clientY - bounds.top },
+        view,
+      );
+      return {
+        wMm: itemType.defaultWMm,
+        hMm: itemType.defaultHMm,
+        colour: itemType.colour,
+        xMm: snap(model.x - itemType.defaultWMm / 2),
+        yMm: snap(model.y - itemType.defaultHMm / 2),
+      };
+    },
+    [itemTypes, snap, view],
+  );
+
+  useEffect(() => {
+    registerDropTarget({
+      contains: (x, y) => {
+        const bounds = containerRef.current?.getBoundingClientRect();
+        return Boolean(
+          bounds &&
+            x >= bounds.left &&
+            x <= bounds.right &&
+            y >= bounds.top &&
+            y <= bounds.bottom,
+        );
+      },
+      drop: (itemTypeId, x, y) => {
+        const anchor = dropAnchor(itemTypeId, x, y);
+        if (!anchor) return;
+        const ids = addObjects([
+          { sceneId: scene.id, itemTypeId, xMm: anchor.xMm, yMm: anchor.yMm },
+        ]);
+        if (ids[0]) setSelection([ids[0]]);
+      },
+    });
+    return () => registerDropTarget(null);
+  }, [addObjects, dropAnchor, scene.id, setSelection]);
+
   /** Returns whether anything was actually placed. */
   const placeAt = useCallback(
     (modelPoint: { x: number; y: number }): boolean => {
@@ -468,21 +526,39 @@ export function PlanCanvas({
     return lines;
   }, [major, minor, scene.hMm, scene.wMm, showGrid]);
 
+  /**
+   * Dashed footprint under the cursor, either for the loaded place/array tool
+   * or for an item being dragged in from the palette. Drawn at true scale, so
+   * you can see whether a 15 m bar actually fits before letting go.
+   */
   const ghost = useMemo(() => {
-    if (!placingItemType || !pointerMm || (tool !== "place" && tool !== "array"))
-      return null;
-    const wMm = placingItemType.defaultWMm;
-    const hMm = placingItemType.defaultHMm;
+    const dragged = paletteDrag
+      ? (itemTypes.get(paletteDrag.itemTypeId) ?? null)
+      : null;
+    const item = dragged ?? placingItemType;
+    if (!item || !pointerMm) return null;
+    if (!dragged && tool !== "place" && tool !== "array") return null;
+
+    const wMm = item.defaultWMm;
+    const hMm = item.defaultHMm;
     const anchor = {
       x: snap(pointerMm.x - wMm / 2),
       y: snap(pointerMm.y - hMm / 2),
     };
     const positions =
-      tool === "array"
+      !dragged && tool === "array"
         ? arrayPositions({ ...anchor, w: wMm, h: hMm }, arraySettings)
         : [anchor];
-    return { positions, wMm, hMm, colour: placingItemType.colour };
-  }, [arraySettings, placingItemType, pointerMm, snap, tool]);
+    return { positions, wMm, hMm, colour: item.colour };
+  }, [
+    arraySettings,
+    itemTypes,
+    paletteDrag,
+    placingItemType,
+    pointerMm,
+    snap,
+    tool,
+  ]);
 
   const measureLength =
     measure &&
@@ -503,33 +579,6 @@ export function PlanCanvas({
       ref={containerRef}
       className="relative h-full w-full overflow-hidden"
       style={{ background: colours.background, cursor }}
-      onDragOver={(event) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = "copy";
-      }}
-      onDrop={(event) => {
-        event.preventDefault();
-        const itemTypeId =
-          event.dataTransfer.getData("text/strand-item-type") ||
-          event.dataTransfer.getData("text/plain");
-        const itemType = itemTypeId ? itemTypes.get(itemTypeId) : null;
-        if (!itemType) return;
-        const bounds = containerRef.current?.getBoundingClientRect();
-        if (!bounds) return;
-        const model = toModel(
-          { x: event.clientX - bounds.left, y: event.clientY - bounds.top },
-          view,
-        );
-        const ids = addObjects([
-          {
-            sceneId: scene.id,
-            itemTypeId: itemType.id,
-            xMm: snap(model.x - itemType.defaultWMm / 2),
-            yMm: snap(model.y - itemType.defaultHMm / 2),
-          },
-        ]);
-        if (ids[0]) setSelection([ids[0]]);
-      }}
     >
       <Stage
         ref={stageRef}

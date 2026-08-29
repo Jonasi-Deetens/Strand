@@ -25,11 +25,19 @@ export interface ArraySettings {
   direction: "horizontal" | "vertical";
 }
 
+export interface PaletteDrag {
+  itemTypeId: string;
+  x: number;
+  y: number;
+}
+
 interface EditorState {
   activeSceneId: string | null;
   selection: string[];
   tool: Tool;
   placingItemTypeId: string | null;
+  /** Live palette drag, in client coordinates, for the canvas drop preview. */
+  paletteDrag: PaletteDrag | null;
   colourMode: ColourMode;
   showGrid: boolean;
   showLabels: boolean;
@@ -48,6 +56,7 @@ interface EditorState {
   setTool: (tool: Tool) => void;
   startPlacing: (itemTypeId: string) => void;
   stopPlacing: () => void;
+  setPaletteDrag: (drag: PaletteDrag | null) => void;
   setColourMode: (mode: ColourMode) => void;
   toggleGrid: () => void;
   toggleLabels: () => void;
@@ -67,6 +76,7 @@ export const useEditorStore = create<EditorState>()(
       selection: [],
       tool: "select",
       placingItemTypeId: null,
+      paletteDrag: null,
       colourMode: "status",
       showGrid: true,
       showLabels: true,
@@ -110,6 +120,7 @@ export const useEditorStore = create<EditorState>()(
           placingItemTypeId: itemTypeId,
         }),
       stopPlacing: () => set({ tool: "select", placingItemTypeId: null }),
+      setPaletteDrag: (paletteDrag) => set({ paletteDrag }),
       setColourMode: (colourMode) => set({ colourMode }),
       toggleGrid: () => set({ showGrid: !get().showGrid }),
       toggleLabels: () => set({ showLabels: !get().showLabels }),
