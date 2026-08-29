@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import Database from "@tauri-apps/plugin-sql";
 import { type SqlDriver, type SqlStatement } from "./driver";
 
@@ -19,13 +20,16 @@ export async function createTauriDriver(): Promise<SqlDriver> {
       await db.execute(sql, params);
     },
     async batch(statements: SqlStatement[]) {
-      // sqlx hands out pooled connections, so an explicit BEGIN/COMMIT pair is
-      // not guaranteed to stay on one connection. Statements are ordered so a
-      // partial apply leaves the database consistent, and the in-memory
-      // document is the source of truth for the current session anyway.
-      for (const statement of statements) {
-        await db.execute(statement.sql, statement.params ?? []);
-      }
+      if (statements.length === 0) return;
+      // A Rust command owns this: an explicit BEGIN sent through the plugin is
+      // not guaranteed to stay on one pooled connection, so the transaction has
+      // to be driven on the pool itself.
+      await invoke("apply_batch", {
+        statements: statements.map((statement) => ({
+          sql: statement.sql,
+          params: statement.params ?? [],
+        })),
+      });
     },
     async flush() {
       /* SQLite writes straight through. */
