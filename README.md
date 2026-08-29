@@ -41,7 +41,7 @@ Statuses drive every colour: `nodig`, `offerte_aangevraagd`, `offerte_ontvangen`
 ## Requirements
 
 - Node.js 20 or newer
-- Rust 1.85 or newer (`rustup toolchain install stable`) for the desktop shell
+- Rust 1.88 or newer (`rustup toolchain install stable`) for the desktop shell
 - Linux only: `libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`,
   `librsvg2-dev`, `patchelf`, `build-essential`, `pkg-config`
 
