@@ -41,6 +41,21 @@ describe("migrations and catalogue seed", () => {
     ).toBeGreaterThan(5);
   });
 
+  it("puts the toilet building on the same 60 m2 target as the bar", async () => {
+    const rows = await driver.select<ItemTypeRow>(
+      "SELECT * FROM item_types WHERE id = 'it_toilet'",
+    );
+    const toilet = toItemType(rows[0]!);
+    expect(toilet).toMatchObject({
+      hasInterior: true,
+      targetAreaM2: 60,
+      defaultWMm: 10000,
+      defaultHMm: 6000,
+    });
+    // Straight out of the palette it already meets its target.
+    expect((toilet.defaultWMm / 1000) * (toilet.defaultHMm / 1000)).toBe(60);
+  });
+
   it("is idempotent when the same migrations run again", async () => {
     const bytes = await driver.serialize();
     const reopened = await createWasmDriver({

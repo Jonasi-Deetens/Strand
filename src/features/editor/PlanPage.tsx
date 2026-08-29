@@ -2,7 +2,8 @@ import { useCallback, useMemo, useState } from "react";
 import { EmptyState } from "@/components/ui";
 import { Icon } from "@/components/Icon";
 import { type Category } from "@/domain/types";
-import { useT } from "@/i18n/useT";
+import { itemTypeName } from "@/domain/naming";
+import { useLanguage, useT } from "@/i18n/useT";
 import { useEditorStore } from "@/store/useEditorStore";
 import { useProjectStore } from "@/store/useProjectStore";
 import { beachScene } from "@/store/selectors";
@@ -18,6 +19,7 @@ import { useEditorShortcuts } from "./useEditorShortcuts";
 
 export function PlanPage() {
   const t = useT();
+  const lang = useLanguage();
   const doc = useProjectStore((state) => state.doc);
   const ensureInteriorScene = useProjectStore(
     (state) => state.ensureInteriorScene,
@@ -92,14 +94,16 @@ export function PlanPage() {
       (object) => object.id === scene.parentObjectId,
     );
     const parentType = parent ? itemTypes.get(parent.itemTypeId) : null;
+    const building =
+      parent?.label ??
+      (parentType ? itemTypeName(parentType, lang) : scene.name);
     return [
       { id: null, name: beach.name },
-      {
-        id: scene.id,
-        name: parent?.label ?? parentType?.nameNl ?? scene.name,
-      },
+      // Naming the sheet as well as the building keeps "Strandbar · Interieur"
+      // apart from the object of the same name out on the beach.
+      { id: scene.id, name: `${building} · ${t("editor.interior")}` },
     ];
-  }, [beach, doc, itemTypes, scene]);
+  }, [beach, doc, itemTypes, lang, scene, t]);
 
   const handleOpenInterior = useCallback(
     (objectId: string) => {
