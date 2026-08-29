@@ -163,7 +163,17 @@
     "zoomWheel": "Zoomen met scrollwiel",
     "keyShiftClick": "⇧ + klik",
     "keySpaceDrag": "Space + slepen",
-    "keyDoubleClick": "Dubbelklik"
+    "keyDoubleClick": "Dubbelklik",
+    "stock": "Voorraad",
+    "stockHint": "Wat er in deze cabine hoort te liggen. Vink af wat al aanwezig is.",
+    "stockEmpty": "Nog geen voorraadlijst",
+    "stockAdd": "Item toevoegen",
+    "stockCustom": "Eigen item, bijv. handdoeken",
+    "stockNeeded": "Nodig",
+    "stockReady": "Aanwezig",
+    "stockFilled": "Volledig gevuld",
+    "stockProgress": "{{ready}} van {{needed}} aanwezig",
+    "stockMarkFilled": "Markeer als aanwezig"
   },
   "dashboard": {
     "title": "Overzicht",
@@ -187,7 +197,9 @@
     "overdue": "{{count}} te laat",
     "quickStart": "Snel starten",
     "quickStartHint": "Begin met het plaatsen van de bar, het toilet en de cabines op het plan.",
-    "toPlan": "Naar het plan"
+    "toPlan": "Naar het plan",
+    "cabinsFilled": "Cabines gevuld",
+    "cabinsFilledSub": "{{filled}} van {{total}}"
   },
   "tasks": {
     "title": "Taken",

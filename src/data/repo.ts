@@ -1,6 +1,7 @@
 import { type SqlDriver, type SqlStatement } from "./driver";
 import {
   flag,
+  toCabinStock,
   toItemType,
   toObject,
   toOfferte,
@@ -10,6 +11,7 @@ import {
   toScene,
   toSupplier,
   toTask,
+  type CabinStockRow,
   type ItemTypeRow,
   type ObjectRow,
   type OfferteLineRow,
@@ -21,6 +23,7 @@ import {
   type TaskRow,
 } from "./rows";
 import {
+  type CabinStockLine,
   type ItemType,
   type Offerte,
   type OfferteLine,
@@ -57,6 +60,7 @@ export async function loadDocument(
     offertes,
     offerteLines,
     tasks,
+    cabinStock,
   ] = await Promise.all([
     // 'beach' sorts before 'interior', which keeps the beach scene first.
     driver.select<SceneRow>(
@@ -86,6 +90,14 @@ export async function loadDocument(
       "SELECT * FROM tasks WHERE project_id = $1 ORDER BY sort_order",
       [projectId],
     ),
+    driver.select<CabinStockRow>(
+      `SELECT cs.* FROM cabin_stock cs
+       JOIN objects o ON o.id = cs.cabin_id
+       JOIN scenes s ON s.id = o.scene_id
+       WHERE s.project_id = $1
+       ORDER BY cs.sort_order`,
+      [projectId],
+    ),
   ]);
 
   return {
@@ -98,6 +110,7 @@ export async function loadDocument(
     offertes: offertes.map(toOfferte),
     offerteLines: offerteLines.map(toOfferteLine),
     tasks: tasks.map(toTask),
+    cabinStock: cabinStock.map(toCabinStock),
   };
 }
 
@@ -388,6 +401,32 @@ export const deleteTask = (id: string): SqlStatement => ({
   params: [id],
 });
 
+export const upsertCabinStock = (line: CabinStockLine): SqlStatement => ({
+  sql: `INSERT INTO cabin_stock (id, cabin_id, item_type_id, title, qty_needed, qty_ready, sort_order)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT(id) DO UPDATE SET
+          cabin_id = excluded.cabin_id,
+          item_type_id = excluded.item_type_id,
+          title = excluded.title,
+          qty_needed = excluded.qty_needed,
+          qty_ready = excluded.qty_ready,
+          sort_order = excluded.sort_order`,
+  params: [
+    line.id,
+    line.cabinId,
+    line.itemTypeId,
+    line.title,
+    line.qtyNeeded,
+    line.qtyReady,
+    line.sortOrder,
+  ],
+});
+
+export const deleteCabinStock = (id: string): SqlStatement => ({
+  sql: "DELETE FROM cabin_stock WHERE id = $1",
+  params: [id],
+});
+
 /** Writes an entire document, used by project import. */
 export function documentStatements(doc: ProjectDocument): SqlStatement[] {
   return [
@@ -400,6 +439,7 @@ export function documentStatements(doc: ProjectDocument): SqlStatement[] {
     ...doc.offertes.map(upsertOfferte),
     ...doc.offerteLines.map(upsertOfferteLine),
     ...doc.tasks.map(upsertTask),
+    ...(doc.cabinStock ?? []).map(upsertCabinStock),
   ];
 }
 
@@ -411,6 +451,14 @@ export function clearProjectStatements(projectId: string): SqlStatement[] {
     },
     { sql: "DELETE FROM offertes WHERE project_id = $1", params: [projectId] },
     { sql: "DELETE FROM tasks WHERE project_id = $1", params: [projectId] },
+    {
+      sql: `DELETE FROM cabin_stock WHERE cabin_id IN (
+              SELECT o.id FROM objects o
+              JOIN scenes s ON s.id = o.scene_id
+              WHERE s.project_id = $1
+            )`,
+      params: [projectId],
+    },
     {
       sql: "DELETE FROM objects WHERE scene_id IN (SELECT id FROM scenes WHERE project_id = $1)",
       params: [projectId],

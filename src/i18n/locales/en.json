@@ -163,7 +163,17 @@
     "zoomWheel": "Zoom with the scroll wheel",
     "keyShiftClick": "⇧ + click",
     "keySpaceDrag": "Space + drag",
-    "keyDoubleClick": "Double-click"
+    "keyDoubleClick": "Double-click",
+    "stock": "Stock",
+    "stockHint": "What this cabin should hold. Tick off what is already in.",
+    "stockEmpty": "No stock list yet",
+    "stockAdd": "Add item",
+    "stockCustom": "Custom item, e.g. towels",
+    "stockNeeded": "Needed",
+    "stockReady": "On hand",
+    "stockFilled": "Fully stocked",
+    "stockProgress": "{{ready}} of {{needed}} on hand",
+    "stockMarkFilled": "Mark as on hand"
   },
   "dashboard": {
     "title": "Overview",
@@ -187,7 +197,9 @@
     "overdue": "{{count}} overdue",
     "quickStart": "Quick start",
     "quickStartHint": "Start by placing the bar, the toilet block and the cabins on the plan.",
-    "toPlan": "Go to the plan"
+    "toPlan": "Go to the plan",
+    "cabinsFilled": "Cabins stocked",
+    "cabinsFilledSub": "{{filled}} of {{total}}"
   },
   "tasks": {
     "title": "Tasks",

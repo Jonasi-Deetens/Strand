@@ -28,7 +28,12 @@ export function parseProject(contents: string): ProjectDocument {
   if ((parsed.version ?? 0) > PROJECT_FILE_VERSION) {
     throw new Error("Bestand komt uit een nieuwere versie van Strand");
   }
-  return parsed.document;
+  return {
+    ...parsed.document,
+    cabinStock: Array.isArray(parsed.document.cabinStock)
+      ? parsed.document.cabinStock
+      : [],
+  };
 }
 
 export function projectFileName(doc: ProjectDocument): string {

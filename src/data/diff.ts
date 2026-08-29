@@ -91,6 +91,13 @@ export function diffDocuments(
       repo.deleteOfferteLine,
     ),
     diffCollection(prev.tasks, next.tasks, repo.upsertTask, repo.deleteTask),
+    // After objects so inserts see a live cabin_id; deletes reverse this list.
+    diffCollection(
+      prev.cabinStock,
+      next.cabinStock,
+      repo.upsertCabinStock,
+      repo.deleteCabinStock,
+    ),
   ];
 
   const statements: SqlStatement[] = [];

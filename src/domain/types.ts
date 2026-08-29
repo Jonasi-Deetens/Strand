@@ -146,6 +146,17 @@ export interface OfferteLine {
   vatPct: number;
 }
 
+/** One line on a cabin packing list. Not a plan object and not a procurement line. */
+export interface CabinStockLine {
+  id: string;
+  cabinId: string;
+  itemTypeId: string | null;
+  title: string;
+  qtyNeeded: number;
+  qtyReady: number;
+  sortOrder: number;
+}
+
 export type TaskStatus = "open" | "bezig" | "wacht" | "klaar";
 
 export interface Task {
@@ -172,4 +183,5 @@ export interface ProjectDocument {
   offertes: Offerte[];
   offerteLines: OfferteLine[];
   tasks: Task[];
+  cabinStock: CabinStockLine[];
 }

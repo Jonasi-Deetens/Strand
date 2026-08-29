@@ -13,6 +13,7 @@ import {
   type Shape,
   type Status,
   type Supplier,
+  type CabinStockLine,
   type Task,
   type TaskStatus,
 } from "@/domain/types";
@@ -239,6 +240,26 @@ export const toTask = (row: TaskRow): Task => ({
   notes: row.notes,
   sortOrder: row.sort_order,
   auto: bool(row.auto),
+});
+
+export interface CabinStockRow {
+  id: string;
+  cabin_id: string;
+  item_type_id: string | null;
+  title: string;
+  qty_needed: number;
+  qty_ready: number;
+  sort_order: number;
+}
+
+export const toCabinStock = (row: CabinStockRow): CabinStockLine => ({
+  id: row.id,
+  cabinId: row.cabin_id,
+  itemTypeId: row.item_type_id,
+  title: row.title,
+  qtyNeeded: row.qty_needed,
+  qtyReady: row.qty_ready,
+  sortOrder: row.sort_order,
 });
 
 export { bool, flag };
