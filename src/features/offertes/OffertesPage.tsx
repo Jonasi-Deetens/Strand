@@ -50,11 +50,15 @@ export function OffertesPage() {
   const doc = useProjectStore((state) => state.doc)!;
   const addOfferte = useProjectStore((state) => state.addOfferte);
   const [tab, setTab] = useState<"quotes" | "compare" | "suppliers">("quotes");
-  const [selectedId, setSelectedId] = useState<string | null>(
-    doc.offertes[0]?.id ?? null,
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const selected = doc.offertes.find((offerte) => offerte.id === selectedId) ?? null;
+  // Fall back to the first quote rather than showing an empty pane: the id can
+  // go stale when a quote is deleted, and it starts out null when the first
+  // quote is created after this page mounted.
+  const selected =
+    doc.offertes.find((offerte) => offerte.id === selectedId) ??
+    doc.offertes[0] ??
+    null;
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -101,7 +105,7 @@ export function OffertesPage() {
                     <OfferteListItem
                       key={offerte.id}
                       offerte={offerte}
-                      active={offerte.id === selectedId}
+                      active={offerte.id === selected?.id}
                       onSelect={() => setSelectedId(offerte.id)}
                     />
                   ))}
