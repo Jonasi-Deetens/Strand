@@ -82,10 +82,13 @@ export function Palette({
                     type="button"
                     draggable
                     onDragStart={(event) => {
+                      // `text/plain` as well, because some webviews hand back
+                      // only the standard types on drop.
                       event.dataTransfer.setData(
                         "text/strand-item-type",
                         itemType.id,
                       );
+                      event.dataTransfer.setData("text/plain", itemType.id);
                       event.dataTransfer.effectAllowed = "copy";
                     }}
                     onClick={() => startPlacing(itemType.id)}

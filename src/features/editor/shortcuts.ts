@@ -19,7 +19,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     titleKey: "editor.groupTools",
     items: [
-      { keys: "V", labelKey: "editor.escape" },
+      { keys: "V", labelKey: "editor.selectTool" },
       { keys: "R", labelKey: "editor.arrayTool" },
       { keys: "M", labelKey: "editor.measure" },
       { keys: "Esc", labelKey: "editor.escape" },

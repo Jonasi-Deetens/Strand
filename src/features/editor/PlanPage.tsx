@@ -164,9 +164,22 @@ export function PlanPage() {
             <div className="pointer-events-none absolute inset-0 grid place-items-center p-8">
               <div className="pointer-events-auto max-w-sm">
                 <EmptyState
-                  icon={<Icon name="umbrella" size={28} />}
-                  title={t("editor.empty")}
-                  hint={t("editor.emptyHint")}
+                  icon={
+                    <Icon
+                      name={scene.kind === "interior" ? "counter" : "umbrella"}
+                      size={28}
+                    />
+                  }
+                  title={
+                    scene.kind === "interior"
+                      ? t("editor.emptyInterior")
+                      : t("editor.empty")
+                  }
+                  hint={
+                    scene.kind === "interior"
+                      ? t("editor.emptyInteriorHint")
+                      : t("editor.emptyHint")
+                  }
                 />
               </div>
             </div>

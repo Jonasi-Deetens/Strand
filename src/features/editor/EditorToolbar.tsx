@@ -35,6 +35,7 @@ export function EditorToolbar({
   const setActiveScene = useEditorStore((state) => state.setActiveScene);
   const array = useEditorStore((state) => state.array);
   const setArray = useEditorStore((state) => state.setArray);
+  const placingItemTypeId = useEditorStore((state) => state.placingItemTypeId);
 
   const undo = useProjectStore((state) => state.undo);
   const redo = useProjectStore((state) => state.redo);
@@ -204,6 +205,9 @@ export function EditorToolbar({
             <Icon name="arrayTool" size={14} /> {t("editor.arrayTool")}
           </span>
           <Divider />
+          {!placingItemTypeId && (
+            <span className="muted text-[11px]">{t("editor.arrayNeedsItem")}</span>
+          )}
           <label className="flex items-center gap-1.5 text-[11px]">
             {t("editor.arrayCount")}
             <Input

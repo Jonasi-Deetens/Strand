@@ -102,8 +102,13 @@ export const useEditorStore = create<EditorState>()(
           placingItemTypeId: tool === "select" ? null : get().placingItemTypeId,
           measure: tool === "measure" ? get().measure : null,
         }),
+      // Picking an item while the array tool is active keeps the array tool, so
+      // "row of cabins" works whichever order the two are chosen in.
       startPlacing: (itemTypeId) =>
-        set({ tool: "place", placingItemTypeId: itemTypeId }),
+        set({
+          tool: get().tool === "array" ? "array" : "place",
+          placingItemTypeId: itemTypeId,
+        }),
       stopPlacing: () => set({ tool: "select", placingItemTypeId: null }),
       setColourMode: (colourMode) => set({ colourMode }),
       toggleGrid: () => set({ showGrid: !get().showGrid }),

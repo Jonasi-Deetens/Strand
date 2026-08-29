@@ -318,9 +318,10 @@ export function PlanCanvas({
     });
   }, [objects, scene, selection, snap, snapEnabled, updateObject]);
 
+  /** Returns whether anything was actually placed. */
   const placeAt = useCallback(
-    (modelPoint: { x: number; y: number }) => {
-      if (!placingItemType) return;
+    (modelPoint: { x: number; y: number }): boolean => {
+      if (!placingItemType) return false;
       const wMm = placingItemType.defaultWMm;
       const hMm = placingItemType.defaultHMm;
       const anchor = {
@@ -333,7 +334,7 @@ export function PlanCanvas({
           { ...anchor, w: wMm, h: hMm },
           arraySettings,
         );
-        addObjects(
+        const ids = addObjects(
           positions.map((position) => ({
             sceneId: scene.id,
             itemTypeId: placingItemType.id,
@@ -341,7 +342,8 @@ export function PlanCanvas({
             yMm: position.y,
           })),
         );
-        return;
+        setSelection(ids);
+        return ids.length > 0;
       }
 
       const id = addObjects([
@@ -353,6 +355,7 @@ export function PlanCanvas({
         },
       ])[0];
       if (id) setSelection([id]);
+      return Boolean(id);
     },
     [
       addObjects,
@@ -378,8 +381,10 @@ export function PlanCanvas({
     if (event.evt.button !== 0) return;
 
     if (tool === "place" || tool === "array") {
-      placeAt(model);
-      if (!event.evt.shiftKey) setTool("select");
+      const placed = placeAt(model);
+      // Shift keeps the tool loaded for repeat placement; a miss keeps it too,
+      // so the panel does not vanish before an item has been chosen.
+      if (placed && !event.evt.shiftKey) setTool("select");
       return;
     }
     if (tool === "measure") {
@@ -495,10 +500,15 @@ export function PlanCanvas({
       ref={containerRef}
       className="relative h-full w-full overflow-hidden"
       style={{ background: colours.background, cursor }}
-      onDragOver={(event) => event.preventDefault()}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+      }}
       onDrop={(event) => {
         event.preventDefault();
-        const itemTypeId = event.dataTransfer.getData("text/strand-item-type");
+        const itemTypeId =
+          event.dataTransfer.getData("text/strand-item-type") ||
+          event.dataTransfer.getData("text/plain");
         const itemType = itemTypeId ? itemTypes.get(itemTypeId) : null;
         if (!itemType) return;
         const bounds = containerRef.current?.getBoundingClientRect();
