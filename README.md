@@ -12,12 +12,13 @@ on your machine in a local SQLite file.
 
 - **Plan** — a 60 × 70 m beach on a metre grid with rulers, a searchable
   catalogue, drag to place, snapping, alignment guides, an array tool for rows of
-  cabins or umbrellas, a measure tool, layer locks and undo/redo. Furniture,
-  playground pieces and plants drag onto the plan as top-down pictures sized to
-  real product footprints (an aluminium director chair is 55 × 54 cm, a teak
-  lounge sofa 2.00 × 0.90 m). The selected building carries a live size and area
-  readout, so you can resize the bar until it hits its 60 m² target. Double-click
-  the bar or the toilet block to draw its interior on its own sheet.
+  cabins or umbrellas, a measure tool, layer locks and undo/redo. Every catalogue
+  item drags onto the plan as a top-down picture sized to its real footprint —
+  including a 7 × 7 m commercial parasol at € 15.000, an aluminium director chair
+  at 55 × 54 cm, and a teak lounge sofa at 2.00 × 0.90 m. The selected building
+  carries a live size and area readout, so you can resize the bar until it hits
+  its 60 m² target. Double-click the bar or the toilet block to draw its interior
+  on its own sheet.
 - **Taken** — every object rolls up into a procurement line (40 cabins is one
   line with quantity 40), and each line gets a task. Manual items that you
   cannot draw — warehouse rent, permits, utilities, insurance — live in the same
