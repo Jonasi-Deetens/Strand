@@ -71,6 +71,15 @@ describe("buildDxf", () => {
     expect(english).toContain("Beach bar");
     expect(english).not.toContain("Strandbar");
   });
+
+  it("dimensions the plot with real geometry rather than DIMENSION entities", () => {
+    // A DIMENSION only points at a block this writer cannot generate, so CAD
+    // tools that do not regenerate it from the dimension style draw nothing.
+    expect(dxf).not.toContain("\nDIMENSION\n");
+    expect(dxf).toContain("MAATLIJN");
+    expect(dxf).toContain("60,00 m");
+    expect(dxf).toContain("70,00 m");
+  });
 });
 
 describe("chooseScale", () => {

@@ -1,6 +1,8 @@
 import {
   DxfWriter,
   LWPolylineFlags,
+  TextHorizontalAlignment,
+  TextVerticalAlignment,
   Units,
   point2d,
   point3d,
@@ -26,15 +28,96 @@ const LAYER_COLOUR: Record<Category, number> = {
 const LAYER_PLOT = "PERCEEL";
 const LAYER_GRID = "RASTER";
 const LAYER_TEXT = "TEKST";
-const LAYER_FRAME = "KADER";
+const LAYER_DIM = "MAATLIJN";
 
 const GRID_STEP_MM = 5 * MM_PER_M;
 const GUTTER_MM = 6 * MM_PER_M;
+
+/** Dimension line geometry, all in model millimetres. */
+const DIM_OFFSET_MM = 1500;
+const DIM_OVERSHOOT_MM = 400;
+const DIM_GAP_MM = 250;
+const DIM_TICK_MM = 350;
+const DIM_TEXT_MM = 700;
 
 interface Offset {
   x: number;
   y: number;
 }
+
+type Pt = [number, number];
+
+/**
+ * Draws a dimension as plain lines and text instead of a DIMENSION entity.
+ * A DIMENSION only carries definition points and delegates its appearance to a
+ * block that the writer cannot generate, so tools that do not regenerate it
+ * from the dimension style show nothing at all. Explicit geometry measures the
+ * same and draws identically everywhere.
+ */
+function drawDimension(
+  dxf: DxfWriter,
+  from: Pt,
+  to: Pt,
+  label: string,
+): void {
+  const [dx, dy] = [to[0] - from[0], to[1] - from[1]];
+  const length = Math.hypot(dx, dy);
+  if (length === 0) return;
+
+  // Rotating the run by -90 degrees points away from the plot for both the
+  // bottom edge (measured left to right) and the right edge (measured upwards).
+  const nx = dy / length;
+  const ny = -dx / length;
+  const ux = dx / length;
+  const uy = dy / length;
+
+  const along = (point: Pt, out: number): Pt => [
+    point[0] + nx * out,
+    point[1] + ny * out,
+  ];
+  const line = (a: Pt, b: Pt) =>
+    dxf.addLine(point3d(...a), point3d(...b), { layerName: LAYER_DIM });
+
+  for (const end of [from, to]) {
+    line(
+      along(end, DIM_GAP_MM),
+      along(end, DIM_OFFSET_MM + DIM_OVERSHOOT_MM),
+    );
+  }
+
+  const start = along(from, DIM_OFFSET_MM);
+  const end = along(to, DIM_OFFSET_MM);
+  line(start, end);
+
+  // Architectural ticks: a short slash at 45 degrees through each end.
+  for (const point of [start, end]) {
+    const tx = (ux + nx) * (DIM_TICK_MM / 2);
+    const ty = (uy + ny) * (DIM_TICK_MM / 2);
+    line(
+      [point[0] - tx, point[1] - ty],
+      [point[0] + tx, point[1] + ty],
+    );
+  }
+
+  const mid: Pt = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2];
+  const anchor = along(mid, DIM_GAP_MM);
+  // Keep the text upright and readable: never let it end up upside down.
+  let rotation = (Math.atan2(dy, dx) * 180) / Math.PI;
+  if (rotation > 90 || rotation <= -90) rotation += 180;
+  dxf.addText(point3d(...anchor), DIM_TEXT_MM, label, {
+    layerName: LAYER_DIM,
+    rotation,
+    horizontalAlignment: TextHorizontalAlignment.Center,
+    verticalAlignment: TextVerticalAlignment.Bottom,
+    secondAlignmentPoint: point3d(...anchor),
+  });
+}
+
+const metres = (mm: number): string =>
+  `${(mm / MM_PER_M).toLocaleString("nl-NL", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} m`;
 
 /**
  * The model has Y growing downwards (screen convention); DXF has Y growing
@@ -143,15 +226,17 @@ function drawScene(
     );
   }
 
-  dxf.addAlignedDim(
-    point3d(...flip(0, scene.hMm, height, offset)),
-    point3d(...flip(scene.wMm, scene.hMm, height, offset)),
-    { layerName: LAYER_FRAME, offset: 1500 },
+  drawDimension(
+    dxf,
+    flip(0, scene.hMm, height, offset),
+    flip(scene.wMm, scene.hMm, height, offset),
+    metres(scene.wMm),
   );
-  dxf.addAlignedDim(
-    point3d(...flip(scene.wMm, scene.hMm, height, offset)),
-    point3d(...flip(scene.wMm, 0, height, offset)),
-    { layerName: LAYER_FRAME, offset: 1500 },
+  drawDimension(
+    dxf,
+    flip(scene.wMm, scene.hMm, height, offset),
+    flip(scene.wMm, 0, height, offset),
+    metres(scene.hMm),
   );
 }
 
@@ -175,7 +260,7 @@ export function buildDxf(
   dxf.addLayer(LAYER_PLOT, 7);
   dxf.addLayer(LAYER_GRID, 253);
   dxf.addLayer(LAYER_TEXT, 7);
-  dxf.addLayer(LAYER_FRAME, 1);
+  dxf.addLayer(LAYER_DIM, 1);
   for (const [category, colour] of Object.entries(LAYER_COLOUR)) {
     dxf.addLayer(category.toUpperCase(), colour);
   }
