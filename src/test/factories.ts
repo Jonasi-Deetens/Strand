@@ -1,4 +1,5 @@
 import {
+  type CabinStockLine,
   type ItemType,
   type Offerte,
   type OfferteLine,
@@ -25,6 +26,42 @@ export const barType: ItemType = {
   unitPriceCents: 7500000,
   targetAreaM2: 60,
   colour: "#b58f57",
+  image: null,
+};
+
+export const chairType: ItemType = {
+  id: "it_stoel",
+  category: "meubilair",
+  nameNl: "Stoel",
+  nameEn: "Chair",
+  icon: "chair",
+  shape: "rect",
+  placement: "both",
+  defaultWMm: 500,
+  defaultHMm: 500,
+  resizable: false,
+  hasInterior: false,
+  unitPriceCents: 8000,
+  targetAreaM2: null,
+  colour: "#1d4249",
+  image: null,
+};
+
+export const directorChairType: ItemType = {
+  id: "it_regisseursstoel",
+  category: "meubilair",
+  nameNl: "Regisseursstoel aluminium",
+  nameEn: "Aluminium director chair",
+  icon: "chair",
+  shape: "rect",
+  placement: "beach",
+  defaultWMm: 550,
+  defaultHMm: 540,
+  resizable: false,
+  hasInterior: false,
+  unitPriceCents: 9500,
+  targetAreaM2: null,
+  colour: "#8b9aa0",
   image: null,
 };
 
@@ -89,13 +126,14 @@ export function makeDocument(
       createdAt: "2026-01-01T00:00:00.000Z",
     },
     scenes: [beach],
-    itemTypes: [barType, cabinType],
+    itemTypes: [barType, cabinType, chairType, directorChairType],
     objects: [],
     procurementLines: [],
     suppliers: [],
     offertes: [],
     offerteLines: [],
     tasks: [],
+    cabinStock: [],
     ...overrides,
   };
 }
@@ -144,6 +182,19 @@ export function makeOfferteLine(
     qty: 1,
     unitPriceCents: 0,
     vatPct: 21,
+    ...overrides,
+  };
+}
+
+export function makeCabinStock(
+  overrides: Partial<CabinStockLine> & Pick<CabinStockLine, "id" | "cabinId">,
+): CabinStockLine {
+  return {
+    itemTypeId: chairType.id,
+    title: "Stoel",
+    qtyNeeded: 2,
+    qtyReady: 0,
+    sortOrder: 0,
     ...overrides,
   };
 }

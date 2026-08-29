@@ -26,12 +26,14 @@ import { formatCents } from "@/lib/money";
 import { useLanguage, useT } from "@/i18n/useT";
 import { useEditorStore } from "@/store/useEditorStore";
 import { useProjectStore } from "@/store/useProjectStore";
+import { isCabinType } from "@/domain/cabinStock";
 import {
   bestQuoteForLine,
   lineById,
   lineCompletion,
   objectsForLine,
 } from "@/store/selectors";
+import { CabinStockPanel } from "./CabinStockPanel";
 
 interface InspectorProps {
   scene: Scene;
@@ -329,6 +331,13 @@ export function Inspector({
             }
           />
         </Field>
+
+        {isCabinType(itemType) && (
+          <CabinStockPanel
+            cabinId={object.id}
+            itemTypes={doc.itemTypes}
+          />
+        )}
 
         <div className="flex flex-wrap gap-1.5">
           {itemType.hasInterior && (

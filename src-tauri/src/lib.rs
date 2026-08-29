@@ -43,6 +43,12 @@ fn migrations() -> Vec<Migration> {
             sql: include_str!("../../migrations/005_all_catalog_images.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 6,
+            description: "cabin_stock",
+            sql: include_str!("../../migrations/006_cabin_stock.sql"),
+            kind: MigrationKind::Up,
+        },
     ]
 }
 

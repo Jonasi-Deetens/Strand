@@ -156,4 +156,12 @@ describe("project file", () => {
       parseProject('{"format":"strand-project","version":99,"document":{}}'),
     ).toThrow();
   });
+
+  it("defaults a missing cabin stock list so older exports still open", () => {
+    const file = JSON.parse(serialiseProject(planned())) as {
+      document: { cabinStock?: unknown };
+    };
+    delete file.document.cabinStock;
+    expect(parseProject(JSON.stringify(file)).cabinStock).toEqual([]);
+  });
 });

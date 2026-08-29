@@ -16,6 +16,7 @@ import { formatCents } from "@/lib/money";
 import { formatM2, mmToM } from "@/lib/units";
 import { useT } from "@/i18n/useT";
 import { useProjectStore } from "@/store/useProjectStore";
+import { cabinFillSummary } from "@/domain/cabinStock";
 import {
   categorySummaries,
   expiringOffertes,
@@ -39,6 +40,7 @@ export function DashboardPage() {
   ).length;
   const expiring = useMemo(() => expiringOffertes(doc, 30), [doc]);
   const coverage = useMemo(() => plotCoverage(doc), [doc]);
+  const cabins = useMemo(() => cabinFillSummary(doc), [doc]);
   const beach = doc.scenes.find((scene) => scene.kind === "beach");
 
   return (
@@ -145,6 +147,27 @@ export function DashboardPage() {
               <div className="flex items-center justify-between">
                 <dt className="muted">{t("dashboard.objects")}</dt>
                 <dd className="tabular-nums">{doc.objects.length}</dd>
+              </div>
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <dt className="muted">{t("dashboard.cabinsFilled")}</dt>
+                  <dd className="tabular-nums">
+                    {cabins.total === 0
+                      ? "—"
+                      : t("dashboard.cabinsFilledSub", {
+                          filled: cabins.filled,
+                          total: cabins.total,
+                        })}
+                  </dd>
+                </div>
+                <ProgressBar
+                  value={cabins.total === 0 ? 0 : cabins.filled / cabins.total}
+                  colour={
+                    cabins.total > 0 && cabins.filled === cabins.total
+                      ? STATUS_COLOUR.gebouwd
+                      : STATUS_COLOUR.besteld
+                  }
+                />
               </div>
               <div>
                 <div className="mb-1 flex items-center justify-between">

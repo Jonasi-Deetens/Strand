@@ -91,6 +91,30 @@ describe("migrations and catalogue seed", () => {
     expect(absent).toEqual([]);
   });
 
+  it("draws parasols as white squares and creates a cabin stock table", async () => {
+    const rows = await driver.select<ItemTypeRow>(
+      "SELECT * FROM item_types WHERE id LIKE 'it_parasol%'",
+    );
+    expect(rows.map((row) => row.id).sort()).toEqual([
+      "it_parasol",
+      "it_parasol_xl",
+      "it_parasol_xxl",
+    ]);
+    for (const row of rows) {
+      expect(toItemType(row)).toMatchObject({
+        shape: "rect",
+        image: `catalog/${row.id}.webp`,
+      });
+      expect(existsSync(path.join(process.cwd(), "public", row.image!))).toBe(
+        true,
+      );
+    }
+    const tables = await driver.select<{ name: string }>(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'cabin_stock'",
+    );
+    expect(tables).toHaveLength(1);
+  });
+
   it("puts the toilet building on the same 60 m2 target as the bar", async () => {
     const rows = await driver.select<ItemTypeRow>(
       "SELECT * FROM item_types WHERE id = 'it_toilet'",
@@ -143,6 +167,43 @@ describe("document round trip", () => {
       created.procurementLines.length,
     );
     expect(loaded!.objects).toEqual([]);
+    expect(loaded!.cabinStock).toEqual([]);
+  });
+
+  it("backfills a packing list onto cabins that already exist", async () => {
+    const driver = await freshDriver();
+    const itemTypes = (
+      await driver.select<ItemTypeRow>("SELECT * FROM item_types")
+    ).map(toItemType);
+    const created = createProjectDocument(itemTypes, translate);
+    const cabin = makeObject({
+      id: "ob_old",
+      itemTypeId: "it_cabine",
+      sceneId: created.scenes[0]!.id,
+    });
+    await driver.batch(
+      documentStatements({ ...created, objects: [cabin], cabinStock: [] }),
+    );
+    await driver.execute(
+      `INSERT OR IGNORE INTO cabin_stock (id, cabin_id, item_type_id, title, qty_needed, qty_ready, sort_order)
+       SELECT 'cs_' || o.id || '_stoel', o.id, 'it_stoel',
+         (SELECT name_nl FROM item_types WHERE id = 'it_stoel'), 2, 0, 0
+       FROM objects o
+       WHERE o.item_type_id IN (SELECT id FROM item_types WHERE category = 'cabine')`,
+    );
+    await driver.execute(
+      `INSERT OR IGNORE INTO cabin_stock (id, cabin_id, item_type_id, title, qty_needed, qty_ready, sort_order)
+       SELECT 'cs_' || o.id || '_regie', o.id, 'it_regisseursstoel',
+         (SELECT name_nl FROM item_types WHERE id = 'it_regisseursstoel'), 2, 0, 1
+       FROM objects o
+       WHERE o.item_type_id IN (SELECT id FROM item_types WHERE category = 'cabine')`,
+    );
+    const loaded = await loadDocument(driver, created.project.id);
+    expect(loaded!.cabinStock).toHaveLength(2);
+    expect(loaded!.cabinStock.map((line) => line.itemTypeId).sort()).toEqual([
+      "it_regisseursstoel",
+      "it_stoel",
+    ]);
   });
 
   it("persists exactly the changes the diff describes", async () => {

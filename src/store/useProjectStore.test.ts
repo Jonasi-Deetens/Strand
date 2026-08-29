@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { resetDriver, setDriver, type SqlDriver } from "@/data/driver";
 import { createWasmDriver } from "@/data/wasmDriver";
 import { loadDocument } from "@/data/repo";
+import { cabinFillSummary } from "@/domain/cabinStock";
 import { useProjectStore } from "./useProjectStore";
 
 const translate = (key: string) => key.replace("seed.", "");
@@ -195,6 +196,81 @@ describe("project store", () => {
     expect(useProjectStore.getState().doc!.objects).toHaveLength(1);
     await useProjectStore.getState().flush();
     expect((await loadDocument(driver, projectId))!.objects).toHaveLength(1);
+  });
+
+  it("seeds a cabin packing list that is not procurement", async () => {
+    const store = useProjectStore.getState();
+    const beach = store.doc!.scenes[0]!;
+    const cabinId = store.addObject({
+      sceneId: beach.id,
+      itemTypeId: "it_cabine",
+      xMm: 4000,
+      yMm: 4000,
+    })!;
+
+    const doc = useProjectStore.getState().doc!;
+    const stock = doc.cabinStock.filter((line) => line.cabinId === cabinId);
+    expect(stock.map((line) => [line.itemTypeId, line.qtyNeeded, line.qtyReady])).toEqual([
+      ["it_stoel", 2, 0],
+      ["it_regisseursstoel", 2, 0],
+    ]);
+    expect(cabinFillSummary(doc)).toEqual({ filled: 0, total: 1 });
+    expect(
+      doc.procurementLines.filter((line) => line.derived).map((line) => line.itemTypeId),
+    ).toEqual(["it_cabine"]);
+
+    for (const line of stock) {
+      useProjectStore.getState().updateCabinStockLine(line.id, {
+        qtyReady: line.qtyNeeded,
+      });
+    }
+    expect(cabinFillSummary(useProjectStore.getState().doc!)).toEqual({
+      filled: 1,
+      total: 1,
+    });
+
+    await useProjectStore.getState().flush();
+    const loaded = await loadDocument(driver, doc.project.id);
+    expect(loaded!.cabinStock).toHaveLength(2);
+    expect(loaded!.cabinStock.every((line) => line.qtyReady === 2)).toBe(true);
+  });
+
+  it("copies an empty packing list when a cabin is duplicated", () => {
+    const store = useProjectStore.getState();
+    const beach = store.doc!.scenes[0]!;
+    const cabinId = store.addObject({
+      sceneId: beach.id,
+      itemTypeId: "it_cabine",
+      xMm: 4000,
+      yMm: 4000,
+    })!;
+    const original = useProjectStore
+      .getState()
+      .doc!.cabinStock.filter((line) => line.cabinId === cabinId);
+    useProjectStore.getState().updateCabinStockLine(original[0]!.id, {
+      qtyReady: original[0]!.qtyNeeded,
+    });
+
+    const [copyId] = useProjectStore.getState().duplicateObjects([cabinId]);
+    const doc = useProjectStore.getState().doc!;
+    const copied = doc.cabinStock.filter((line) => line.cabinId === copyId);
+    expect(copied).toHaveLength(2);
+    expect(copied.every((line) => line.qtyReady === 0)).toBe(true);
+    expect(cabinFillSummary(doc)).toEqual({ filled: 0, total: 2 });
+  });
+
+  it("drops cabin stock together with the cabin", () => {
+    const store = useProjectStore.getState();
+    const beach = store.doc!.scenes[0]!;
+    const cabinId = store.addObject({
+      sceneId: beach.id,
+      itemTypeId: "it_cabine",
+      xMm: 4000,
+      yMm: 4000,
+    })!;
+    expect(useProjectStore.getState().doc!.cabinStock.length).toBeGreaterThan(0);
+    useProjectStore.getState().removeObjects([cabinId]);
+    expect(useProjectStore.getState().doc!.cabinStock).toEqual([]);
   });
 
   it("pushes a derived line status down to its objects", () => {

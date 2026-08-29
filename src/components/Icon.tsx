@@ -18,7 +18,7 @@ export const ICON_PATHS: Record<string, string> = {
   table: "M3 9h18v3H3z M6 12v8 M18 12v8",
   hightable: "M6 6h12v2H6z M11.2 8h1.6v10h-1.6z M8 20h8",
   chair: "M7 10h10v8H7z M7 10V5h10v5 M9 18v2 M15 18v2",
-  umbrella: "M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z M12 12v9 M9 21h6",
+  umbrella: "M5 5h14v14H5z",
   // Grounds
   windscreen: "M3 20V8l6-3v15 M9 20V5l6 3v12 M15 20V8l6-3v15",
   fence: "M4 4v16 M10 4v16 M16 4v16 M22 4v16 M2 9h20 M2 15h20",

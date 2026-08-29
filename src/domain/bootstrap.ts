@@ -74,6 +74,7 @@ export function createProjectDocument(
     offertes: [],
     offerteLines: [],
     tasks: [],
+    cabinStock: [],
   };
 }
 
@@ -92,6 +93,7 @@ export const emptyDocument = (): ProjectDocument => ({
   procurementLines: [],
   suppliers: [],
   offertes: [],
-  offerteLines: [],
-  tasks: [],
+    offerteLines: [],
+    tasks: [],
+    cabinStock: [],
 });

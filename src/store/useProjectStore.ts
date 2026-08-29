@@ -9,10 +9,16 @@ import {
 import { type ItemTypeRow } from "@/data/rows";
 import { toItemType } from "@/data/rows";
 import { createProjectDocument, type Translate } from "@/domain/bootstrap";
+import {
+  copyCabinStock,
+  defaultCabinStock,
+  isCabinType,
+} from "@/domain/cabinStock";
 import { syncDerived } from "@/domain/sync";
 import { nextStatus } from "@/domain/status";
-import { type Lang } from "@/domain/naming";
+import { itemTypeName, type Lang } from "@/domain/naming";
 import {
+  type CabinStockLine,
   type ItemType,
   type Offerte,
   type OfferteLine,
@@ -117,6 +123,13 @@ interface ProjectState {
   addTask: (task: Partial<Task>) => string;
   updateTask: (id: string, patch: Partial<Task>) => void;
   removeTask: (id: string) => void;
+
+  addCabinStockLine: (
+    cabinId: string,
+    line?: Partial<CabinStockLine>,
+  ) => string;
+  updateCabinStockLine: (id: string, patch: Partial<CabinStockLine>) => void;
+  removeCabinStockLine: (id: string) => void;
 
   replaceDocument: (doc: ProjectDocument) => Promise<void>;
 }
@@ -282,7 +295,17 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         });
       }
       if (created.length === 0) return [];
-      commit({ ...doc, objects: [...doc.objects, ...created] });
+      const seededStock = created.flatMap((object) => {
+        const itemType = doc.itemTypes.find((type) => type.id === object.itemTypeId);
+        return isCabinType(itemType)
+          ? defaultCabinStock(object.id, doc.itemTypes, get().lang)
+          : [];
+      });
+      commit({
+        ...doc,
+        objects: [...doc.objects, ...created],
+        cabinStock: [...doc.cabinStock, ...seededStock],
+      });
       return created.map((object) => object.id);
     },
 
@@ -329,12 +352,15 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           .filter((s) => s.parentObjectId && idSet.has(s.parentObjectId))
           .map((s) => s.id),
       );
+      const objects = doc.objects.filter(
+        (object) => !idSet.has(object.id) && !removedScenes.has(object.sceneId),
+      );
+      const remainingIds = new Set(objects.map((object) => object.id));
       commit({
         ...doc,
-        objects: doc.objects.filter(
-          (object) => !idSet.has(object.id) && !removedScenes.has(object.sceneId),
-        ),
+        objects,
         scenes: doc.scenes.filter((scene) => !removedScenes.has(scene.id)),
+        cabinStock: doc.cabinStock.filter((line) => remainingIds.has(line.cabinId)),
       });
     },
 
@@ -342,17 +368,26 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       const doc = requireDoc();
       if (!doc || ids.length === 0) return [];
       const idSet = new Set(ids);
-      const copies = doc.objects
-        .filter((object) => idSet.has(object.id))
-        .map((object) => ({
+      const copies: PlanObject[] = [];
+      const stockCopies: CabinStockLine[] = [];
+      for (const object of doc.objects) {
+        if (!idSet.has(object.id)) continue;
+        const copy: PlanObject = {
           ...object,
           id: newId("ob"),
           xMm: object.xMm + offsetMm,
           yMm: object.yMm + offsetMm,
           procurementLineId: null,
-        }));
+        };
+        copies.push(copy);
+        stockCopies.push(...copyCabinStock(doc.cabinStock, object.id, copy.id));
+      }
       if (copies.length === 0) return [];
-      commit({ ...doc, objects: [...doc.objects, ...copies] });
+      commit({
+        ...doc,
+        objects: [...doc.objects, ...copies],
+        cabinStock: [...doc.cabinStock, ...stockCopies],
+      });
       return copies.map((copy) => copy.id);
     },
 
@@ -552,6 +587,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         itemTypes: doc.itemTypes.filter((itemType) => itemType.id !== id),
         procurementLines: doc.procurementLines.filter(
           (line) => line.itemTypeId !== id,
+        ),
+        cabinStock: doc.cabinStock.map((line) =>
+          line.itemTypeId === id ? { ...line, itemTypeId: null } : line,
         ),
       });
     },
@@ -758,11 +796,83 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       commit({ ...doc, tasks: doc.tasks.filter((item) => item.id !== id) });
     },
 
+    addCabinStockLine(cabinId, partial) {
+      const doc = requireDoc();
+      if (!doc) return "";
+      const itemType = partial?.itemTypeId
+        ? doc.itemTypes.find((type) => type.id === partial.itemTypeId)
+        : null;
+      const existing = doc.cabinStock.filter((line) => line.cabinId === cabinId);
+      if (itemType) {
+        const same = existing.find((line) => line.itemTypeId === itemType.id);
+        if (same) {
+          commit(
+            {
+              ...doc,
+              cabinStock: doc.cabinStock.map((line) =>
+                line.id === same.id
+                  ? { ...line, qtyNeeded: line.qtyNeeded + (partial?.qtyNeeded ?? 1) }
+                  : line,
+              ),
+            },
+            { skipSync: true },
+          );
+          return same.id;
+        }
+      }
+      const line: CabinStockLine = {
+        id: newId("cs"),
+        cabinId,
+        itemTypeId: itemType?.id ?? partial?.itemTypeId ?? null,
+        title:
+          partial?.title ??
+          (itemType ? itemTypeName(itemType, get().lang) : ""),
+        qtyNeeded: partial?.qtyNeeded ?? 1,
+        qtyReady: partial?.qtyReady ?? 0,
+        sortOrder:
+          partial?.sortOrder ??
+          existing.reduce((max, item) => Math.max(max, item.sortOrder), -1) + 1,
+      };
+      if (!line.title.trim()) return "";
+      commit(
+        { ...doc, cabinStock: [...doc.cabinStock, line] },
+        { skipSync: true },
+      );
+      return line.id;
+    },
+
+    updateCabinStockLine(id, patch) {
+      const doc = requireDoc();
+      if (!doc) return;
+      commit(
+        {
+          ...doc,
+          cabinStock: doc.cabinStock.map((line) =>
+            line.id === id ? { ...line, ...patch } : line,
+          ),
+        },
+        { skipSync: true },
+      );
+    },
+
+    removeCabinStockLine(id) {
+      const doc = requireDoc();
+      if (!doc) return;
+      commit(
+        {
+          ...doc,
+          cabinStock: doc.cabinStock.filter((line) => line.id !== id),
+        },
+        { skipSync: true },
+      );
+    },
+
     async replaceDocument(next) {
       const { driver, doc } = get();
       if (!driver || !doc) return;
-      const statements = diffDocuments(doc, next);
-      set({ doc: next, past: [], future: [], pending: [] });
+      const normalised = { ...next, cabinStock: next.cabinStock ?? [] };
+      const statements = diffDocuments(doc, normalised);
+      set({ doc: normalised, past: [], future: [], pending: [] });
       await driver.batch(statements);
       await driver.flush();
     },

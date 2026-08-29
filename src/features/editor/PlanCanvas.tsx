@@ -19,6 +19,7 @@ import {
   Transformer,
 } from "react-konva";
 import type Konva from "konva";
+import { cabinStockCounts, isCabinType, stockForCabin } from "@/domain/cabinStock";
 import { STATUS_COLOUR } from "@/domain/status";
 import { itemTypeName } from "@/domain/naming";
 import { type ItemType, type PlanObject, type Scene } from "@/domain/types";
@@ -113,6 +114,7 @@ export function PlanCanvas({
   const setMeasure = useEditorStore((state) => state.setMeasure);
   const arraySettings = useEditorStore((state) => state.array);
 
+  const doc = useProjectStore((state) => state.doc);
   const addObjects = useProjectStore((state) => state.addObjects);
   const updateObject = useProjectStore((state) => state.updateObject);
   const beginInteraction = useProjectStore((state) => state.beginInteraction);
@@ -131,6 +133,17 @@ export function PlanCanvas({
       }),
     [objects, itemTypes, hiddenCategories],
   );
+
+  const stockByCabin = useMemo(() => {
+    const map = new Map<string, { ready: number; needed: number }>();
+    if (!doc) return map;
+    for (const object of objects) {
+      const itemType = itemTypes.get(object.itemTypeId);
+      if (!isCabinType(itemType)) continue;
+      map.set(object.id, cabinStockCounts(stockForCabin(doc, object.id)));
+    }
+    return map;
+  }, [doc, objects, itemTypes]);
 
   const snap = useCallback(
     (value: number) => (snapEnabled ? snapMm(value) : Math.round(value)),
@@ -734,6 +747,7 @@ export function PlanCanvas({
                   showLabel={showLabels}
                   label={object.label ?? itemTypeName(itemType, lang)}
                   interiorCount={interiorCounts.get(object.id) ?? 0}
+                  stock={stockByCabin.get(object.id) ?? null}
                   selectable={tool === "select"}
                   draggable={
                     tool === "select" &&

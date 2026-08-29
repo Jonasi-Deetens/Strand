@@ -23,6 +23,8 @@ interface ObjectShapeProps {
   selectable: boolean;
   /** Items drawn on this building's own interior sheet. */
   interiorCount: number;
+  /** Packing-list fill for a cabin. Null when the type has no stock list. */
+  stock?: { ready: number; needed: number } | null;
   onSelect: (id: string, additive: boolean) => void;
   onOpenInterior: (id: string) => void;
   onDragStart: (id: string) => void;
@@ -47,6 +49,7 @@ export const ObjectShape = memo(function ObjectShape({
   draggable,
   selectable,
   interiorCount,
+  stock,
   onSelect,
   onOpenInterior,
   onDragStart,
@@ -181,6 +184,40 @@ export const ObjectShape = memo(function ObjectShape({
             fontSize={10 / scale}
             fontStyle="700"
             fill={style.fill}
+            listening={false}
+          />
+        </>
+      )}
+
+      {stock && (
+        <>
+          <Rect
+            x={object.wMm - 28 / scale}
+            y={object.hMm - 20 / scale}
+            width={22 / scale}
+            height={14 / scale}
+            cornerRadius={3 / scale}
+            fill={
+              stock.needed > 0 && stock.ready >= stock.needed
+                ? "#22c55e"
+                : style.stroke
+            }
+            opacity={0.85}
+            listening={false}
+          />
+          <Text
+            x={object.wMm - 28 / scale}
+            y={object.hMm - 18 / scale}
+            width={22 / scale}
+            align="center"
+            text={
+              stock.needed > 0 && stock.ready >= stock.needed
+                ? "✓"
+                : `${stock.ready}/${stock.needed}`
+            }
+            fontSize={9 / scale}
+            fontStyle="700"
+            fill="#ffffff"
             listening={false}
           />
         </>
