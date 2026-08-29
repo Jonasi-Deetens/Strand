@@ -74,6 +74,27 @@ npm run tauri:build   # installers in src-tauri/target/release/bundle
 
 The build runs `npm run build` first, which typechecks and bundles the frontend.
 
+## Downloading a build
+
+You do not need a toolchain to get the app. The **Release** workflow builds
+installers for macOS, Windows and Linux on GitHub:
+
+- **A one-off build** — Actions → Release → *Run workflow*. When it finishes,
+  the run page has `strand-macos`, `strand-windows` and `strand-linux` as
+  downloadable artifacts.
+- **A published version** — push a tag and the same workflow drafts a GitHub
+  release with the installers attached:
+
+```bash
+npm version patch      # or edit the version in package.json,
+                       # src-tauri/Cargo.toml and src-tauri/tauri.conf.json
+git push --follow-tags
+```
+
+macOS gets a universal `.dmg`, Windows an `.msi` and an NSIS `.exe`, Linux a
+`.deb`, an `.rpm` and an `.AppImage`. Nothing is code-signed, so macOS needs
+*Right click → Open* on first launch and Windows shows a SmartScreen warning.
+
 ## Checks
 
 ```bash
