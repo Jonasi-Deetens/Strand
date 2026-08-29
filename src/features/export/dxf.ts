@@ -10,7 +10,7 @@ import {
 import { type Category, type ProjectDocument, type Scene } from "@/domain/types";
 import { itemTypeName, type Lang } from "@/domain/naming";
 import { rectCorners } from "@/lib/geometry";
-import { MM_PER_M } from "@/lib/units";
+import { MM_PER_M, formatDimensionM } from "@/lib/units";
 
 /** AutoCAD colour index per category, so layers look sane in any CAD viewer. */
 const LAYER_COLOUR: Record<Category, number> = {
@@ -113,11 +113,7 @@ function drawDimension(
   });
 }
 
-const metres = (mm: number): string =>
-  `${(mm / MM_PER_M).toLocaleString("nl-NL", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} m`;
+const metres = formatDimensionM;
 
 /**
  * The model has Y growing downwards (screen convention); DXF has Y growing

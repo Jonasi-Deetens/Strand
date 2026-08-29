@@ -8,7 +8,7 @@ import {
   type Scene,
 } from "@/domain/types";
 import { rectCorners } from "@/lib/geometry";
-import { MM_PER_M, areaM2 } from "@/lib/units";
+import { MM_PER_M, areaM2, formatDimensionM } from "@/lib/units";
 import { formatCents } from "@/lib/money";
 import { bestQuoteForLine } from "@/store/selectors";
 
@@ -300,8 +300,8 @@ function drawSceneDrawing(
     originY - 3 * k,
   );
   pdf.text(
-    `${(scene.wMm / MM_PER_M).toFixed(1)} m`,
-    originX + width / 2 - 6 * k,
+    formatDimensionM(scene.wMm),
+    originX + width / 2 - 7 * k,
     originY - 7 * k,
   );
   pdf.line(originX - 5 * k, originY, originX - 5 * k, originY + height);
@@ -313,9 +313,9 @@ function drawSceneDrawing(
     originY + height,
   );
   pdf.text(
-    `${(scene.hMm / MM_PER_M).toFixed(1)} m`,
+    formatDimensionM(scene.hMm),
     originX - 7 * k,
-    originY + height / 2 + 6 * k,
+    originY + height / 2 + 7 * k,
     { angle: 90 },
   );
 

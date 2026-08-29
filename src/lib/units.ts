@@ -53,6 +53,18 @@ export function formatDims(wMm: Mm, hMm: Mm): string {
   return `${formatM(wMm)} × ${formatM(hMm)}`;
 }
 
+/**
+ * Dimension text on a drawing. Always two decimals, so a run of figures on one
+ * sheet lines up, and shared by the DXF and the PDF so the two agree.
+ */
+export function formatDimensionM(mm: Mm, locale = "nl-NL"): string {
+  const value = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(mmToM(mm));
+  return `${value} m`;
+}
+
 /** Parses free user input in metres ("6,5" or "6.5") into millimetres. */
 export function parseMetresInput(value: string): Mm | null {
   const normalised = value.replace(",", ".").trim();
