@@ -49,6 +49,19 @@ export function PlanPage() {
     [doc, scene],
   );
 
+  const interiorCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (!doc) return counts;
+    for (const interior of doc.scenes) {
+      if (interior.kind !== "interior" || !interior.parentObjectId) continue;
+      counts.set(
+        interior.parentObjectId,
+        doc.objects.filter((object) => object.sceneId === interior.id).length,
+      );
+    }
+    return counts;
+  }, [doc]);
+
   const countByType = useMemo(() => {
     const counts = new Map<string, number>();
     for (const object of sceneObjects) {
@@ -158,6 +171,7 @@ export function PlanPage() {
             scene={scene}
             objects={sceneObjects}
             itemTypes={itemTypes}
+            interiorCounts={interiorCounts}
             onOpenInterior={handleOpenInterior}
           />
           {/* Never interactive: it covers the middle of the canvas, which is

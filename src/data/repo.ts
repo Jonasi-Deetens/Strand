@@ -58,9 +58,11 @@ export async function loadDocument(
     offerteLines,
     tasks,
   ] = await Promise.all([
-    driver.select<SceneRow>("SELECT * FROM scenes WHERE project_id = $1", [
-      projectId,
-    ]),
+    // 'beach' sorts before 'interior', which keeps the beach scene first.
+    driver.select<SceneRow>(
+      "SELECT * FROM scenes WHERE project_id = $1 ORDER BY kind, name",
+      [projectId],
+    ),
     driver.select<ItemTypeRow>(
       "SELECT * FROM item_types ORDER BY category, name_nl",
     ),

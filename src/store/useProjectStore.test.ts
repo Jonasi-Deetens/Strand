@@ -129,6 +129,51 @@ describe("project store", () => {
     expect(loaded!.scenes).toHaveLength(1);
   });
 
+  it("finds the same interior scene again after a restart", async () => {
+    const store = useProjectStore.getState();
+    const beach = store.doc!.scenes[0]!;
+    const barId = store.addObject({
+      sceneId: beach.id,
+      itemTypeId: "it_bar",
+      xMm: 10000,
+      yMm: 8000,
+    })!;
+    const interiorId = useProjectStore.getState().ensureInteriorScene(barId)!;
+    useProjectStore.getState().addObject({
+      sceneId: interiorId,
+      itemTypeId: "it_toog",
+      xMm: 1000,
+      yMm: 500,
+    });
+    await useProjectStore.getState().flush();
+
+    // Reopen the same database in a new store, the way a restart would.
+    const bytes = (await driver.serialize())!;
+    const reopened = await createWasmDriver({ ephemeral: true, bytes });
+    setDriver(reopened);
+    useProjectStore.setState({
+      loadState: "idle",
+      error: null,
+      doc: null,
+      past: [],
+      future: [],
+      driver: null,
+      pending: [],
+    });
+    await useProjectStore.getState().init(translate, "nl");
+
+    const doc = useProjectStore.getState().doc!;
+    const interior = doc.scenes.find((scene) => scene.kind === "interior")!;
+    expect(interior.id).toBe(interiorId);
+    expect(interior.parentObjectId).toBe(barId);
+    expect(
+      doc.objects.filter((object) => object.sceneId === interior.id),
+    ).toHaveLength(1);
+    expect(useProjectStore.getState().ensureInteriorScene(barId)).toBe(
+      interior.id,
+    );
+  });
+
   it("undoes and redoes a placement, database included", async () => {
     const store = useProjectStore.getState();
     const beach = store.doc!.scenes[0]!;

@@ -44,6 +44,8 @@ interface PlanCanvasProps {
   scene: Scene;
   objects: PlanObject[];
   itemTypes: Map<string, ItemType>;
+  /** Object id to the number of items on its interior sheet. */
+  interiorCounts: Map<string, number>;
   onOpenInterior: (objectId: string) => void;
 }
 
@@ -53,6 +55,7 @@ export function PlanCanvas({
   scene,
   objects,
   itemTypes,
+  interiorCounts,
   onOpenInterior,
 }: PlanCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -585,17 +588,23 @@ export function PlanCanvas({
               />
             )}
 
+            {/* Overall dimensions, centred on their own edge so the two labels
+                cannot land on the same corner. */}
             <Text
               x={0}
               y={-26 / view.scale}
+              width={scene.wMm}
+              align="center"
               text={formatM(scene.wMm, 1)}
               fontSize={14 / view.scale}
               fill={colours.text}
               listening={false}
             />
             <Text
-              x={-8 / view.scale}
-              y={0}
+              x={-24 / view.scale}
+              y={scene.hMm}
+              width={scene.hMm}
+              align="center"
               text={formatM(scene.hMm, 1)}
               fontSize={14 / view.scale}
               fill={colours.text}
@@ -615,6 +624,7 @@ export function PlanCanvas({
                   selected={selection.includes(object.id)}
                   scale={view.scale}
                   showLabel={showLabels}
+                  interiorCount={interiorCounts.get(object.id) ?? 0}
                   draggable={
                     tool === "select" &&
                     !lockedCategories.includes(itemType.category)

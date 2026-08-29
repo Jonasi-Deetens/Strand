@@ -15,6 +15,8 @@ interface ObjectShapeProps {
   scale: number;
   showLabel: boolean;
   draggable: boolean;
+  /** Items drawn on this building's own interior sheet. */
+  interiorCount: number;
   onSelect: (id: string, additive: boolean) => void;
   onOpenInterior: (id: string) => void;
   onDragStart: (id: string) => void;
@@ -36,6 +38,7 @@ export const ObjectShape = memo(function ObjectShape({
   scale,
   showLabel,
   draggable,
+  interiorCount,
   onSelect,
   onOpenInterior,
   onDragStart,
@@ -137,16 +140,31 @@ export const ObjectShape = memo(function ObjectShape({
       )}
 
       {itemType.hasInterior && (
-        <Rect
-          x={object.wMm - 22 / scale}
-          y={6 / scale}
-          width={16 / scale}
-          height={16 / scale}
-          cornerRadius={3 / scale}
-          fill={style.stroke}
-          opacity={0.5}
-          listening={false}
-        />
+        <>
+          <Rect
+            x={object.wMm - 22 / scale}
+            y={6 / scale}
+            width={16 / scale}
+            height={16 / scale}
+            cornerRadius={3 / scale}
+            fill={style.stroke}
+            opacity={0.5}
+            listening={false}
+          />
+          {/* How much is already drawn inside, so two identical buildings can
+              be told apart at a glance. */}
+          <Text
+            x={object.wMm - 22 / scale}
+            y={9.5 / scale}
+            width={16 / scale}
+            align="center"
+            text={interiorCount > 0 ? String(interiorCount) : "+"}
+            fontSize={10 / scale}
+            fontStyle="700"
+            fill={style.fill}
+            listening={false}
+          />
+        </>
       )}
     </Group>
   );
