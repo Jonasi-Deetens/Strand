@@ -7,6 +7,10 @@ export function registerStage(stage: Konva.Stage | null): void {
   activeStage = stage;
 }
 
+export function currentStage(): Konva.Stage | null {
+  return activeStage;
+}
+
 function dataUrlToBytes(dataUrl: string): Uint8Array {
   const base64 = dataUrl.split(",")[1] ?? "";
   const binary = atob(base64);

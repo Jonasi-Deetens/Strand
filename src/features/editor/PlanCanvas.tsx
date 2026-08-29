@@ -452,7 +452,11 @@ export function PlanCanvas({
       setMeasure({ fromMm: model, toMm: model });
       return;
     }
-    // Object groups stop propagation, so reaching here means empty ground.
+    // Everything drawn on the plot ignores pointers and object groups stop
+    // propagation, so a hit on the bare stage is the only real empty ground.
+    // Without this, grabbing a selection handle would clear the selection and
+    // leave the transformer without a node to resize.
+    if (event.target !== stage) return;
     setBand({ x: model.x, y: model.y, w: 0, h: 0 });
     if (!event.evt.shiftKey) setSelection([]);
   };
