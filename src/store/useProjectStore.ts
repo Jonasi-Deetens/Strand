@@ -633,7 +633,11 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       });
     },
 
-    /** Choosing a quote rejects the competing quotes for the same items. */
+    /**
+     * Choosing a quote rejects the competing quotes for the same items and
+     * moves those items on to "offerte ontvangen", so the plan colours in.
+     * Items that are already further along keep their own status.
+     */
     chooseOfferte(id) {
       const doc = requireDoc();
       if (!doc) return;
@@ -642,6 +646,10 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           .filter((line) => line.offerteId === id && line.procurementLineId)
           .map((line) => line.procurementLineId as string),
       );
+      const behind = (status: Status) =>
+        status === "nodig" || status === "offerte_aangevraagd";
+      const covered = (lineId: string | null) =>
+        Boolean(lineId && chosenLineIds.has(lineId));
       const competing = new Set(
         doc.offerteLines
           .filter(
@@ -660,6 +668,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
             return { ...offerte, status: "afgewezen" };
           return offerte;
         }),
+        objects: doc.objects.map((object) =>
+          covered(object.procurementLineId) && behind(object.status)
+            ? { ...object, status: "offerte_ontvangen" }
+            : object,
+        ),
+        procurementLines: doc.procurementLines.map((line) =>
+          !line.derived && covered(line.id) && behind(line.status)
+            ? { ...line, status: "offerte_ontvangen" }
+            : line,
+        ),
       });
     },
 

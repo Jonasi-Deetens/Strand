@@ -218,4 +218,61 @@ describe("project store", () => {
       doc.procurementLines.find((candidate) => candidate.id === line.id)!.status,
     ).toBe("besteld");
   });
+
+  it("advances the items a chosen quote covers and rejects the competition", () => {
+    const store = useProjectStore.getState();
+    const beach = store.doc!.scenes[0]!;
+    store.addObject({
+      sceneId: beach.id,
+      itemTypeId: "it_cabine",
+      xMm: 4000,
+      yMm: 4000,
+    });
+    const line = useProjectStore
+      .getState()
+      .doc!.procurementLines.find((candidate) => candidate.derived)!;
+
+    const cheap = useProjectStore.getState().addOfferte({});
+    useProjectStore
+      .getState()
+      .addOfferteLine(cheap, { procurementLineId: line.id, qty: 1 });
+    const rival = useProjectStore.getState().addOfferte({});
+    useProjectStore
+      .getState()
+      .addOfferteLine(rival, { procurementLineId: line.id, qty: 1 });
+
+    useProjectStore.getState().chooseOfferte(cheap);
+    const doc = useProjectStore.getState().doc!;
+
+    expect(doc.offertes.find((o) => o.id === cheap)!.status).toBe("gekozen");
+    expect(doc.offertes.find((o) => o.id === rival)!.status).toBe("afgewezen");
+    expect(doc.objects.every((object) => object.status === "offerte_ontvangen")).toBe(
+      true,
+    );
+  });
+
+  it("leaves items that are already further along alone when a quote is chosen", () => {
+    const store = useProjectStore.getState();
+    const beach = store.doc!.scenes[0]!;
+    store.addObject({
+      sceneId: beach.id,
+      itemTypeId: "it_cabine",
+      xMm: 4000,
+      yMm: 4000,
+    });
+    const line = useProjectStore
+      .getState()
+      .doc!.procurementLines.find((candidate) => candidate.derived)!;
+    useProjectStore.getState().setLineStatus(line.id, "gebouwd");
+
+    const offerte = useProjectStore.getState().addOfferte({});
+    useProjectStore
+      .getState()
+      .addOfferteLine(offerte, { procurementLineId: line.id, qty: 1 });
+    useProjectStore.getState().chooseOfferte(offerte);
+
+    expect(
+      useProjectStore.getState().doc!.objects.every((o) => o.status === "gebouwd"),
+    ).toBe(true);
+  });
 });
